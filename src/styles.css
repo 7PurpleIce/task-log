@@ -88,7 +88,7 @@ header {
 
 main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 408px;
   gap: 28px;
   padding: 36px 0;
   align-items: start;
@@ -205,6 +205,7 @@ h2 { font-size: 20px; font-weight: 500; }
 .add-child { color: var(--orange); }
 
 .editor {
+  min-width: 0;
   padding: 24px;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -212,6 +213,8 @@ h2 { font-size: 20px; font-weight: 500; }
   position: sticky;
   top: 20px;
 }
+
+.editor textarea { min-height: 340px; line-height: 1.7; }
 
 .editor label { display: block; margin: 22px 0 8px; font-size: 14px; }
 .editor form .primary { margin-top: 16px; width: 100%; }

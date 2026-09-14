@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { branchIds, validate } from "./useTasks";
+import { branchIds, validate, applyTaskChanges } from "./useTasks";
 import { cloudRequest } from "./cloud";
 
 export default function useCloudTasks(owner) {
@@ -101,7 +101,7 @@ export default function useCloudTasks(owner) {
     }
     const id = crypto.randomUUID();
     const next = doc.tasks.map(t => t.id === parentId ? { ...t, collapsed: false } : t);
-    next.push({ id, parentId, title: title.trim(), notes: "", done: false,
+    next.unshift({ id, parentId, title: title.trim(), notes: "", done: false,
       collapsed: false, createdAt: new Date().toISOString() });
     return await commit(next) ? id : null;
   }
@@ -113,7 +113,7 @@ export default function useCloudTasks(owner) {
       setError("Название или заметки изменены на другом устройстве. Скопируйте свой черновик, затем нажмите «Загрузить актуальное».");
       return false;
     }
-    return commit(doc.tasks.map(t => t.id === id ? { ...t, ...changes } : t));
+    return commit(applyTaskChanges(doc.tasks, id, changes));
   }
 
   function remove(id) {

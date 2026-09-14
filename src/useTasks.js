@@ -16,6 +16,15 @@ export function branchIds(tasks, rootId) {
   return ids;
 }
 
+export function applyTaskChanges(tasks, id, changes) {
+  const completedBranch = changes.done === true ? branchIds(tasks, id) : null;
+  return tasks.map(task => {
+    if (task.id === id) return { ...task, ...changes };
+    if (completedBranch?.has(task.id)) return { ...task, done: true };
+    return task;
+  });
+}
+
 export function validate(data) {
   if (data?.version !== 1 || !Array.isArray(data.tasks)) {
     throw new Error("Неверный формат резервной копии.");
@@ -108,7 +117,7 @@ export default function useTasks() {
       task.id === parentId ? { ...task, collapsed: false } : task
     );
 
-    next.push({
+    next.unshift({
       id,
       parentId,
       title: title.trim(),
@@ -122,9 +131,7 @@ export default function useTasks() {
   }
 
   function update(id, changes) {
-    return commit(
-      tasks.map(task => task.id === id ? { ...task, ...changes } : task)
-    );
+    return commit(applyTaskChanges(tasks, id, changes));
   }
 
   function remove(id) {
