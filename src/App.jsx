@@ -1,7 +1,7 @@
 import { logError } from "./diagnostics";
 import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
-import TaskTree from "./components/TaskTree";
+import TaskSections from "./components/TaskSections";
 import TaskEditor from "./components/TaskEditor";
 
 import useCloudTasks from "./useCloudTasks";
@@ -27,7 +27,7 @@ export default function App() {
 function Workspace({ session, recovery, onRecovered }) {
   const local = useTasks();
   const cloud = useCloudTasks(session?.user.id);
-  const { tasks, error, blocked, add, update, remove, restore } = session ? cloud : local;
+  const { tasks, error, blocked, add, update, remove, restore, clearCompleted } = session ? cloud : local;
   const [selectedId, setSelectedId] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [parentId, setParentId] = useState(null);
@@ -216,7 +216,14 @@ function Workspace({ session, recovery, onRecovered }) {
             </form>
           </div>
 
-          <TaskTree
+          <TaskSections
+            onClearCompleted={async () => {
+              if (await clearCompleted()) {
+                if (selected?.done) setSelectedId(null);
+                if (parent?.done) setParentId(null);
+                setNotice("Выполненные задачи удалены.");
+              }
+            }}
             disabled={blocked}
             tasks={tasks}
             selectedId={selectedId}

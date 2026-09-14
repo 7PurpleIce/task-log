@@ -1,6 +1,6 @@
 import { logEvent, logError } from "./diagnostics";
 import { useEffect, useRef, useState } from "react";
-import { branchIds, validate, applyTaskChanges } from "./useTasks";
+import { branchIds, validate, applyTaskChanges, tasksByStatus } from "./useTasks";
 import { cloudRequest } from "./cloud";
 
 export default function useCloudTasks(owner) {
@@ -128,11 +128,15 @@ export default function useCloudTasks(owner) {
     return commit(doc.tasks.filter(t => !ids.has(t.id)));
   }
 
+  function clearCompleted() {
+    return commit(tasksByStatus(doc.tasks, false));
+  }
+
   async function restore(data) {
     try { return await commit(validate(data)); }
     catch (err) { logError("import_failed", err); setError(err.message); return false; }
   }
 
   return { tasks: doc.tasks, error, blocked: !ready || busy, busy, ready,
-    status, add, update, remove, restore, refresh: pull };
+    status, add, update, remove, restore, clearCompleted, refresh: pull };
 }

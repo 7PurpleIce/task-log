@@ -26,6 +26,24 @@ export function applyTaskChanges(tasks, id, changes) {
   });
 }
 
+// Project one status into a valid tree, preserving the nearest retained ancestor.
+// The source list is never mutated. Also used when deleting completed parents.
+export function tasksByStatus(tasks, done) {
+  const byId = new Map(tasks.map(task => [task.id, task]));
+  const kept = tasks.filter(task => task.done === done);
+  const ids = new Set(kept.map(task => task.id));
+  return kept.map(task => {
+    let parentId = task.parentId;
+    const visited = new Set([task.id]);
+    while (parentId !== null && !ids.has(parentId)) {
+      if (visited.has(parentId)) { parentId = null; break; }
+      visited.add(parentId);
+      parentId = byId.get(parentId)?.parentId ?? null;
+    }
+    return parentId === task.parentId ? task : { ...task, parentId };
+  });
+}
+
 export function validate(data) {
   if (data?.version !== 1 || !Array.isArray(data.tasks)) {
     throw new Error("Неверный формат резервной копии.");
@@ -143,9 +161,13 @@ export default function useTasks() {
     return commit(tasks.filter(task => !ids.has(task.id)));
   }
 
+  function clearCompleted() {
+    return commit(tasksByStatus(tasks, false));
+  }
+
   function restore(data) {
     return commit(validate(data), true);
   }
 
-  return { tasks, error, blocked, add, update, remove, restore };
+  return { tasks, error, blocked, add, update, remove, restore, clearCompleted };
 }

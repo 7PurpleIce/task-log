@@ -1,7 +1,9 @@
 import React from "react";
 
 export default function TaskTree({
-  tasks, selectedId, onSelect, onUpdate, onAdd, disabled
+  tasks, selectedId, onSelect, onUpdate, onAdd, disabled,
+  emptyTitle = "Начните с главной задачи",
+  emptyDescription = "Затем добавляйте ветки и подзадачи кнопкой «＋»."
 }) {
   const children = new Map();
 
@@ -32,8 +34,8 @@ export default function TaskTree({
     return (
       <div className="empty">
         <span className="empty-mark">＋</span>
-        <h2>Начните с главной задачи</h2>
-        <p>Затем добавляйте ветки и подзадачи кнопкой «＋».</p>
+        <h2>{emptyTitle}</h2>
+        <p>{emptyDescription}</p>
       </div>
     );
   }
