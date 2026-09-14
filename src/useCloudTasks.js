@@ -1,3 +1,4 @@
+import { logEvent, logError } from "./diagnostics";
 import { useEffect, useRef, useState } from "react";
 import { branchIds, validate, applyTaskChanges } from "./useTasks";
 import { cloudRequest } from "./cloud";
@@ -36,7 +37,10 @@ export default function useCloudTasks(owner) {
       setStatus("Синхронизировано");
       // Write errors stay visible until a successful write or explicit dismissal.
     } catch (err) {
-      if (active.current && start === epoch.current) setStatus(err.message);
+      if (active.current && start === epoch.current) {
+        logError("sync_failed", err);
+        setStatus(err.message);
+      }
     } finally { reading.current = false; }
   }
 
@@ -76,11 +80,13 @@ export default function useCloudTasks(owner) {
       });
       if (!active.current) return false;
       accept(saved);
+      logEvent("cloud_saved", "info", { revision: saved.revision });
       setError("");
       setStatus("Синхронизировано");
       return true;
     } catch (err) {
       if (active.current) {
+        logError(err.code === "40001" ? "conflict" : "save_failed", err, { revision: expectedRevision });
         setError(err.code === "40001"
           ? "На другом устройстве появились изменения. Данные обновятся автоматически. Проверьте их и повторите действие; текст в редакторе сохранён."
           : err.message + " Изменение не подтверждено. Проверьте данные перед повторной отправкой.");
@@ -110,6 +116,7 @@ export default function useCloudTasks(owner) {
     const task = doc.tasks.find(t => t.id === id);
     if (!task) { setError("Задача уже удалена."); return false; }
     if (original && (original.title !== task.title || original.notes !== task.notes)) {
+      logEvent("conflict", "warn");
       setError("Название или заметки изменены на другом устройстве. Скопируйте свой черновик, затем нажмите «Загрузить актуальное».");
       return false;
     }
@@ -123,7 +130,7 @@ export default function useCloudTasks(owner) {
 
   async function restore(data) {
     try { return await commit(validate(data)); }
-    catch (err) { setError(err.message); return false; }
+    catch (err) { logError("import_failed", err); setError(err.message); return false; }
   }
 
   return { tasks: doc.tasks, error, blocked: !ready || busy, busy, ready,

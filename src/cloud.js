@@ -1,3 +1,4 @@
+import { logEvent, logError } from "./diagnostics";
 // Only a public client key. Database permissions enforce ownership.
 const URL = "https://juodnoiwehmlqzhhhukp.supabase.co";
 const KEY = "sb_publishable_Ky8E37uvYAXH_xOoIZRLyw_GYB9hE-5";
@@ -10,16 +11,18 @@ export function getSession() {
   try {
     const value = JSON.parse(localStorage.getItem(SESSION) || "null");
     return value?.user?.id && value?.refresh_token ? value : null;
-  } catch { return null; }
+  } catch (error) { logError("session_read_failed", error); return null; }
 }
 
 function putSession(value) {
+  try {
   if (value) {
     value.expires_at = value.expires_at || Math.floor(Date.now() / 1000) + value.expires_in;
     localStorage.setItem(SESSION, JSON.stringify(value));
   } else {
     localStorage.removeItem(SESSION);
   }
+  } catch (error) { logError("session_save_failed", error); throw error; }
   window.dispatchEvent(new Event(EVENT));
 }
 
@@ -35,6 +38,16 @@ export function watchSession(callback) {
 }
 
 async function request(path, { method = "GET", body, token } = {}) {
+  const started = performance.now();
+  const operation = path.startsWith("/auth/v1/token?grant_type=password") ? "login"
+    : path.startsWith("/auth/v1/token?grant_type=refresh_token") ? "refresh"
+    : path.startsWith("/auth/v1/signup") ? "signup"
+    : path.startsWith("/auth/v1/recover") ? "recover"
+    : path.startsWith("/auth/v1/logout") ? "logout"
+    : path.startsWith("/auth/v1/user") ? "user"
+    : path.startsWith("/rest/v1/rpc/save_task_log") ? "save_tasks"
+    : path.startsWith("/rest/v1/task_logs") ? "load_tasks" : "other";
+  const context = () => ({ operation, method, durationMs: performance.now() - started });
   let response;
   try {
     response = await fetch(URL + path, {
@@ -47,7 +60,8 @@ async function request(path, { method = "GET", body, token } = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(20000)
     });
-  } catch {
+  } catch (error) {
+    logError("request_failed", error, context());
     throw new Error("Нет связи с сервером. Проверьте интернет и повторите действие.");
   }
   const data = await response.json().catch(() => null);
@@ -65,8 +79,10 @@ async function request(path, { method = "GET", body, token } = {}) {
       data?.error_description || "Сервер отклонил запрос.");
     error.code = code;
     error.status = response.status;
+    logError("request_failed", error, context());
     throw error;
   }
+  if (operation !== "load_tasks") logEvent("request_ok", "info", { ...context(), status: response.status });
   return data;
 }
 

@@ -1,3 +1,5 @@
+import Diagnostics from "./components/Diagnostics";
+import { logError } from "./diagnostics";
 import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
 import TaskTree from "./components/TaskTree";
@@ -13,7 +15,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   useEffect(() => {
     const unsubscribe = watchSession(setSession);
-    finishAuthRedirect().then(setRecovery).catch(err => setAuthError(err.message));
+    finishAuthRedirect().then(setRecovery).catch(err => { logError("auth_callback_failed", err); setAuthError(err.message); });
     return unsubscribe;
   }, []);
   return <>
@@ -103,6 +105,7 @@ function Workspace({ session, recovery, onRecovered }) {
         setNotice("Резервная копия восстановлена.");
       }
     } catch (err) {
+      logError("import_failed", err);
       setNotice(err instanceof SyntaxError
         ? "Не удалось прочитать JSON-файл."
         : err.message);
@@ -141,6 +144,7 @@ function Workspace({ session, recovery, onRecovered }) {
           />
         </div>
       </header>
+      <Diagnostics />
 
       <AccountPanel session={session} recovery={recovery} onRecovered={onRecovered} busy={cloud.busy} />
       {session && <div className="sync-status" role="status">{cloud.status}

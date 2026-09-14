@@ -1,3 +1,4 @@
+import { logEvent, logError } from "./diagnostics";
 import { useState } from "react";
 
 const KEY = "task-log:v1";
@@ -78,7 +79,8 @@ function readInitial() {
       error: "",
       blocked: false
     };
-  } catch {
+  } catch (error) {
+    logError("local_read_failed", error);
     return {
       tasks: [],
       error:
@@ -103,8 +105,10 @@ export default function useTasks() {
       setTasks(next);
       setError("");
       setBlocked(false);
+      logEvent("local_saved");
       return true;
-    } catch {
+    } catch (error) {
+      logError("local_save_failed", error);
       setError("Сохранение не удалось. Изменение не применено. Экспортируйте копию.");
       return false;
     }
