@@ -1,6 +1,6 @@
 const KEY = "task-log:diagnostics:v1";
 const LIMIT = 300;
-export const BUILD = "2026-09-14-diagnostics-1";
+export const BUILD = "2026-09-14-diagnostics-2";
 export const EVENTS = {
   app_start: "Запуск приложения", runtime_error: "Ошибка JavaScript",
   promise_error: "Необработанная ошибка операции", render_error: "Ошибка интерфейса",
@@ -65,7 +65,8 @@ export function logEvent(event, level = "info", meta = {}) {
     entries = [...(persistent ? read() : entries), entry].slice(-LIMIT);
     try { localStorage.setItem(KEY, JSON.stringify(entries)); persistent = true; }
     catch { persistent = false; }
-    window.dispatchEvent(new Event("task-log-diagnostics"));
+    if (entry.level === "error") console.error("[Task Log]", EVENTS[event], entry);
+    else if (entry.level === "warn") console.warn("[Task Log]", EVENTS[event], entry);
   } catch { /* Diagnostics must never break the application. */ }
 }
 
@@ -86,16 +87,6 @@ export function clearDiagnostics() {
   try { localStorage.removeItem(KEY); persistent = true; }
   catch { persistent = false; }
   window.dispatchEvent(new Event("task-log-diagnostics"));
-}
-
-export function downloadDiagnostics() {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(getDiagnostics(), null, 2)],
-    { type: "application/json" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "task-log-diagnostics-" + new Date().toISOString().slice(0, 10) + ".json";
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 let installed = false;

@@ -1,4 +1,3 @@
-import Diagnostics from "./components/Diagnostics";
 import { logError } from "./diagnostics";
 import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
@@ -144,7 +143,6 @@ function Workspace({ session, recovery, onRecovered }) {
           />
         </div>
       </header>
-      <Diagnostics />
 
       <AccountPanel session={session} recovery={recovery} onRecovered={onRecovered} busy={cloud.busy} />
       {session && <div className="sync-status" role="status">{cloud.status}
