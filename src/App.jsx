@@ -31,6 +31,22 @@ function Workspace({ session, recovery, onRecovered }) {
   const [newTitle, setNewTitle] = useState("");
   const [parentId, setParentId] = useState(null);
   const [notice, setNotice] = useState("");
+  const migrationPreferenceKey = "task-log:hide-local-notice:" + (session?.user.id || "local");
+  const [migrationHidden, setMigrationHidden] = useState(() => {
+    try { return localStorage.getItem(migrationPreferenceKey) === "true"; }
+    catch { return false; }
+  });
+
+  function setMigrationVisibility(hidden) {
+    setMigrationHidden(hidden);
+    try {
+      localStorage.setItem(migrationPreferenceKey, String(hidden));
+    } catch {
+      setNotice("Окно " + (hidden ? "скрыто" : "показано") +
+        ", но браузер не смог запомнить этот выбор после перезагрузки.");
+    }
+  }
+
   const titleInput = useRef(null);
   const importInput = useRef(null);
 
@@ -105,6 +121,11 @@ function Workspace({ session, recovery, onRecovered }) {
         </div>
 
         <div className="backup-actions">
+          {session && local.tasks.length > 0 && migrationHidden && (
+            <button type="button" onClick={() => setMigrationVisibility(false)}>
+              Показать локальные задачи
+            </button>
+          )}
           <button onClick={() => exportTasks()} disabled={blocked}>
             Экспорт
           </button>
@@ -125,9 +146,12 @@ function Workspace({ session, recovery, onRecovered }) {
       {session && <div className="sync-status" role="status">{cloud.status}
         <button disabled={cloud.busy} onClick={cloud.refresh}>Проверить сейчас</button>
       </div>}
-      {session && local.tasks.length > 0 && <div className="migration">
+      {session && local.tasks.length > 0 && !migrationHidden && <div className="migration">
         <p>В этом браузере остались прежние локальные задачи: {local.tasks.length}. Их копия сохранена отдельно.</p>
         <button onClick={() => exportTasks(local.tasks)}>Экспорт локальных задач</button>
+        <button type="button" onClick={() => setMigrationVisibility(true)}>
+          Скрыть данное окно
+        </button>
         {cloud.ready && tasks.length === 0 && <button className="primary" disabled={blocked} onClick={async () => {
           if (await restore({ version: 1, tasks: local.tasks })) setNotice("Локальные задачи скопированы в облако.");
         }}>Перенести локальные задачи в облако</button>}
