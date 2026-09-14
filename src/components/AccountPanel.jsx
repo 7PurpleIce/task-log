@@ -5,11 +5,13 @@ export default function AccountPanel({ session, recovery, onRecovered, busy }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   async function submit(event) {
     event.preventDefault();
     setPending(true);
+    setShowPassword(false);
     setMessage("");
     try {
       if (recovery) {
@@ -50,21 +52,44 @@ export default function AccountPanel({ session, recovery, onRecovered, busy }) {
             <input type="email" required autoComplete="email" value={email}
               onChange={e => setEmail(e.target.value)} />
           </label>}
-          {(recovery || mode !== "reset") && <label>Пароль
-            <input type="password" required minLength={mode === "login" && !recovery ? 1 : 8}
-              autoComplete={mode === "login" && !recovery ? "current-password" : "new-password"}
-              value={password} onChange={e => setPassword(e.target.value)} />
-          </label>}
+          {(recovery || mode !== "reset") && (
+            <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+              <label htmlFor="account-password">Пароль</label>
+              <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
+                <input
+                  id="account-password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={mode === "login" && !recovery ? 1 : 8}
+                  autoComplete={mode === "login" && !recovery ? "current-password" : "new-password"}
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  aria-label="Показать пароль"
+                  aria-pressed={showPassword}
+                  aria-controls="account-password"
+                  onClick={() => setShowPassword(value => !value)}
+                  style={{ flexShrink: 0, minHeight: 44 }}
+                >
+                  {showPassword ? "Скрыть" : "Показать"}
+                </button>
+              </div>
+            </div>
+          )}
           <button className="primary" disabled={pending}>
             {pending ? "Подождите…" : recovery ? "Сохранить новый пароль" :
               mode === "signup" ? "Зарегистрироваться" : mode === "reset" ? "Восстановить пароль" : "Войти"}
           </button>
           {!recovery && <div className="auth-links">
             <button type="button" disabled={pending} onClick={() => {
-              setMode(mode === "signup" ? "login" : "signup"); setMessage("");
+              setMode(mode === "signup" ? "login" : "signup"); setMessage(""); setShowPassword(false);
             }}>{mode === "signup" ? "Уже есть аккаунт" : "Создать аккаунт"}</button>
             <button type="button" disabled={pending} onClick={() => {
-              setMode(mode === "reset" ? "login" : "reset"); setMessage("");
+              setMode(mode === "reset" ? "login" : "reset"); setMessage(""); setShowPassword(false);
             }}>{mode === "reset" ? "Вернуться ко входу" : "Забыли пароль?"}</button>
           </div>}
         </form>
