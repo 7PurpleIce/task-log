@@ -127,8 +127,8 @@ function Workspace({ session, recovery, onRecovered }) {
 
         <div className="backup-actions">
           {session && local.tasks.length > 0 && migrationHidden && (
-            <button type="button" onClick={() => setMigrationVisibility(false)}>
-              Показать локальные задачи
+            <button type="button" title="Показать локальные задачи" onClick={() => setMigrationVisibility(false)}>
+              Локальные задачи
             </button>
           )}
           <button onClick={() => exportTasks()} disabled={blocked}>

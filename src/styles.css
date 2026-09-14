@@ -307,3 +307,14 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
   .brand-account .brand .eyebrow { letter-spacing: 0; }
   .account-dropdown { width: min(380px, calc(100vw - 32px)); }
 }
+
+header > .backup-actions { gap: 6px; }
+header > .backup-actions > button {
+  padding: 6px 10px;
+  min-height: 34px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+@media (pointer: coarse) {
+  header > .backup-actions > button { min-height: 44px; }
+}
