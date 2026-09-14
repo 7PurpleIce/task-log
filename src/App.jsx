@@ -5,7 +5,7 @@ import TaskTree from "./components/TaskTree";
 import TaskEditor from "./components/TaskEditor";
 
 import useCloudTasks from "./useCloudTasks";
-import AccountPanel from "./components/AccountPanel";
+import AccountMenu from "./components/AccountMenu";
 import { getSession, watchSession, finishAuthRedirect } from "./cloud";
 
 export default function App() {
@@ -114,12 +114,15 @@ function Workspace({ session, recovery, onRecovered }) {
   return (
     <div className="app">
       <header>
+        <div className="brand-account">
         <div className="brand">
           <div className="emblem">T</div>
           <div>
             <strong>TASK<span>LOG</span></strong>
             <div className="eyebrow">Личный журнал задач</div>
           </div>
+        </div>
+        <AccountMenu session={session} recovery={recovery} onRecovered={onRecovered} busy={cloud.busy} />
         </div>
 
         <div className="backup-actions">
@@ -144,7 +147,6 @@ function Workspace({ session, recovery, onRecovered }) {
         </div>
       </header>
 
-      <AccountPanel session={session} recovery={recovery} onRecovered={onRecovered} busy={cloud.busy} />
       {session && <div className="sync-status" role="status">{cloud.status}
         <button disabled={cloud.busy} onClick={cloud.refresh}>Проверить сейчас</button>
       </div>}

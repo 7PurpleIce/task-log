@@ -288,3 +288,22 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
   .account-form > .primary { width: 100%; }
   .sync-status { flex-wrap: wrap; }
 }
+
+.brand-account { position: relative; display: flex; align-items: center; gap: 16px; }
+.account-trigger { display: grid; place-items: center; width: 44px; height: 44px; padding: 9px; color: var(--orange); border-radius: 50%; }
+.account-trigger[aria-expanded="true"] { background: #34251d; border-color: var(--orange); }
+.account-dropdown { position: absolute; top: calc(100% + 12px); left: 0; z-index: 30; width: min(380px, calc(100vw - 72px)); max-height: calc(100dvh - 140px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--orange); box-shadow: 0 16px 40px #0008; }
+.account-dropdown[hidden] { display: none; }
+.account-dropdown .account-panel { border: 0; margin: 0; padding: 22px; }
+.account-dropdown .account-panel > div:first-child { padding-right: 24px; overflow-wrap: anywhere; }
+.account-dropdown .account-form { display: flex; flex-direction: column; align-items: stretch; }
+.account-dropdown .account-form > label,
+.account-dropdown .account-form > div { flex: none !important; }
+.account-close { position: absolute; right: 8px; top: 8px; border: 0; background: transparent; font-size: 22px; padding: 4px 10px; }
+@media (max-width: 560px) {
+  .brand-account { gap: 12px; }
+  .brand-account .brand { gap: 10px; }
+  .brand-account .brand strong { font-size: 20px; letter-spacing: 2px; }
+  .brand-account .brand .eyebrow { letter-spacing: 0; }
+  .account-dropdown { width: min(380px, calc(100vw - 32px)); }
+}
