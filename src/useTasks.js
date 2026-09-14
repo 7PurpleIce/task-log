@@ -16,7 +16,7 @@ export function branchIds(tasks, rootId) {
   return ids;
 }
 
-function validate(data) {
+export function validate(data) {
   if (data?.version !== 1 || !Array.isArray(data.tasks)) {
     throw new Error("Неверный формат резервной копии.");
   }

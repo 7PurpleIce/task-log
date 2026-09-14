@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function TaskTree({
-  tasks, selectedId, onSelect, onUpdate, onAdd
+  tasks, selectedId, onSelect, onUpdate, onAdd, disabled
 }) {
   const children = new Map();
 
@@ -51,7 +51,7 @@ export default function TaskTree({
           >
             <button
               className="icon"
-              disabled={!nested.length}
+              disabled={disabled || !nested.length}
               aria-label={task.collapsed ? "Развернуть ветку" : "Свернуть ветку"}
               aria-expanded={nested.length ? !task.collapsed : undefined}
               onClick={() => onUpdate(task.id, {
@@ -63,6 +63,7 @@ export default function TaskTree({
 
             <input
               type="checkbox"
+              disabled={disabled}
               checked={task.done}
               aria-label={`Выполнено: ${task.title}`}
               onChange={() => onUpdate(task.id, { done: !task.done })}
@@ -84,6 +85,7 @@ export default function TaskTree({
 
             <button
               className="icon add-child"
+              disabled={disabled}
               aria-label={`Добавить подзадачу к «${task.title}»`}
               onClick={() => onAdd(task.id)}
             >

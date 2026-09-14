@@ -1,10 +1,32 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
 import TaskTree from "./components/TaskTree";
 import TaskEditor from "./components/TaskEditor";
 
+import useCloudTasks from "./useCloudTasks";
+import AccountPanel from "./components/AccountPanel";
+import { getSession, watchSession, finishAuthRedirect } from "./cloud";
+
 export default function App() {
-  const { tasks, error, blocked, add, update, remove, restore } = useTasks();
+  const [session, setSession] = useState(getSession);
+  const [recovery, setRecovery] = useState(false);
+  const [authError, setAuthError] = useState("");
+  useEffect(() => {
+    const unsubscribe = watchSession(setSession);
+    finishAuthRedirect().then(setRecovery).catch(err => setAuthError(err.message));
+    return unsubscribe;
+  }, []);
+  return <>
+    {authError && <div role="alert" className="alert">{authError}</div>}
+    <Workspace key={session?.user.id || "local"} session={session}
+      recovery={recovery} onRecovered={() => setRecovery(false)} />
+  </>;
+}
+
+function Workspace({ session, recovery, onRecovered }) {
+  const local = useTasks();
+  const cloud = useCloudTasks(session?.user.id);
+  const { tasks, error, blocked, add, update, remove, restore } = session ? cloud : local;
   const [selectedId, setSelectedId] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [parentId, setParentId] = useState(null);
@@ -21,11 +43,11 @@ export default function App() {
     titleInput.current?.focus();
   }
 
-  function createTask(event) {
+  async function createTask(event) {
     event.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || blocked) return;
 
-    const id = add(newTitle, parentId);
+    const id = await add(newTitle, parentId);
 
     if (id) {
       setNewTitle("");
@@ -33,9 +55,9 @@ export default function App() {
     }
   }
 
-  function exportTasks() {
+  function exportTasks(data = tasks) {
     const blob = new Blob(
-      [JSON.stringify({ version: 1, tasks }, null, 2)],
+      [JSON.stringify({ version: 1, tasks: data }, null, 2)],
       { type: "application/json" }
     );
     const url = URL.createObjectURL(blob);
@@ -59,7 +81,7 @@ export default function App() {
         "Восстановление заменит текущие задачи. Продолжить?"
       )) return;
 
-      if (restore(data)) {
+      if (await restore(data)) {
         setSelectedId(null);
         setParentId(null);
         setNotice("Резервная копия восстановлена.");
@@ -83,10 +105,10 @@ export default function App() {
         </div>
 
         <div className="backup-actions">
-          <button onClick={exportTasks} disabled={blocked}>
+          <button onClick={() => exportTasks()} disabled={blocked}>
             Экспорт
           </button>
-          <button onClick={() => importInput.current?.click()}>
+          <button disabled={Boolean(session) && blocked} onClick={() => importInput.current?.click()}>
             Восстановить
           </button>
           <input
@@ -99,6 +121,17 @@ export default function App() {
         </div>
       </header>
 
+      <AccountPanel session={session} recovery={recovery} onRecovered={onRecovered} busy={cloud.busy} />
+      {session && <div className="sync-status" role="status">{cloud.status}
+        <button disabled={cloud.busy} onClick={cloud.refresh}>Проверить сейчас</button>
+      </div>}
+      {session && local.tasks.length > 0 && <div className="migration">
+        <p>В этом браузере остались прежние локальные задачи: {local.tasks.length}. Их копия сохранена отдельно.</p>
+        <button onClick={() => exportTasks(local.tasks)}>Экспорт локальных задач</button>
+        {cloud.ready && tasks.length === 0 && <button className="primary" disabled={blocked} onClick={async () => {
+          if (await restore({ version: 1, tasks: local.tasks })) setNotice("Локальные задачи скопированы в облако.");
+        }}>Перенести локальные задачи в облако</button>}
+      </div>}
       {error && <div className="alert" role="alert">{error}</div>}
       {notice && (
         <div className="notice" role="status">
@@ -156,6 +189,7 @@ export default function App() {
           </div>
 
           <TaskTree
+            disabled={blocked}
             tasks={tasks}
             selectedId={selectedId}
             onSelect={setSelectedId}
@@ -164,19 +198,20 @@ export default function App() {
           />
 
           <footer>
-            {error ? "Проверьте сохранение" : "Изменения сохраняются в этом браузере"}
+            {session ? cloud.status : error ? "Проверьте сохранение" : "Изменения сохраняются в этом браузере"}
           </footer>
         </section>
 
         {selected ? (
           <TaskEditor
             key={selected.id}
+            disabled={blocked}
             task={selected}
             tasks={tasks}
             onUpdate={update}
             onAdd={prepareAdd}
-            onDelete={id => {
-              if (remove(id)) {
+            onDelete={async id => {
+              if (await remove(id)) {
                 setSelectedId(null);
                 setParentId(null);
               }
