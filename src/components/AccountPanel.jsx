@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { signIn, signUp, signOut, resetPassword, changePassword } from "../cloud";
 
 export default function AccountPanel({ session, recovery, onRecovered, busy }) {
+  const [editingNickname, setEditingNickname] = useState(false);
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +43,11 @@ export default function AccountPanel({ session, recovery, onRecovered, busy }) {
       </div>
       {session && !recovery ? (
         <>
-        <NicknameEditor user={session.user} disabled={busy} onBusyChange={setPending} />
+        <button type="button" className="wide" disabled={pending}
+          aria-expanded={editingNickname} onClick={() => setEditingNickname(value => !value)}>
+          {editingNickname ? "Закрыть редактирование ника" : "Изменить ник"}
+        </button>
+        {editingNickname && <NicknameEditor user={session.user} disabled={false} onBusyChange={setPending} />}
         <button disabled={busy || pending} onClick={async () => {
           setPending(true);
           try {

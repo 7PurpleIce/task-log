@@ -1,14 +1,30 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import TaskTree from "./TaskTree";
 import { tasksByStatus } from "../useTasks";
 
 export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) {
+  const [sortOrder, setSortOrder] = useState("default");
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    const timer = setInterval(tick, 30000);
+    window.addEventListener("focus", tick);
+    document.addEventListener("visibilitychange", tick);
+    return () => { clearInterval(timer); window.removeEventListener("focus", tick); document.removeEventListener("visibilitychange", tick); };
+  }, []);
   const active = tasksByStatus(tasks, false);
   const completed = tasksByStatus(tasks, true);
   return <>
+    <label className="deadline-sort">Сортировка
+      <select value={sortOrder} onChange={event => setSortOrder(event.target.value)}>
+        <option value="default">Новые сверху</option>
+        <option value="asc">Ближайший срок</option>
+        <option value="desc">Дальний срок</option>
+      </select>
+    </label>
     <section aria-labelledby="active-tasks-heading">
       <h2 id="active-tasks-heading">В работе <span className="count">({active.length})</span></h2>
-      <TaskTree {...treeProps} tasks={active}
+      <TaskTree {...treeProps} sortOrder={sortOrder} now={now} tasks={active}
         emptyTitle={tasks.length ? "Все задачи выполнены" : "Начните с главной задачи"}
         emptyDescription={tasks.length ? "Завершённые задачи находятся в разделе ниже." : "Затем добавляйте ветки и подзадачи кнопкой «＋»."} />
     </section>
@@ -29,7 +45,7 @@ export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) 
           </svg>
         </button>
       </div>
-      <TaskTree {...treeProps} tasks={completed}
+      <TaskTree {...treeProps} sortOrder={sortOrder} now={now} tasks={completed}
         emptyTitle="Выполненных задач пока нет"
         emptyDescription="Отметьте задачу галочкой, и она появится здесь." />
     </section>

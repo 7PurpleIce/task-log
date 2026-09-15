@@ -1,3 +1,4 @@
+import { validDueDate } from "./deadlines";
 import { MAX_TASK_STATUS_LENGTH, DEFAULT_TASK_STATUS, normalizeTaskStatus } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useState } from "react";
@@ -81,6 +82,7 @@ export function validate(data) {
       !task.title.trim() ||
       typeof task.notes !== "string" ||
       typeof task.done !== "boolean" ||
+      !validDueDate(task.dueDate) ||
       (task.pinned !== undefined && typeof task.pinned !== "boolean") ||
       (task.status !== undefined && (typeof task.status !== "string" || !task.status.trim() || task.status.length > MAX_TASK_STATUS_LENGTH)) ||
       typeof task.collapsed !== "boolean" ||
@@ -154,7 +156,7 @@ export default function useTasks() {
     }
   }
 
-  function add(title, parentId = null, status = DEFAULT_TASK_STATUS) {
+  function add(title, parentId = null, status = DEFAULT_TASK_STATUS, dueDate = null) {
     const id = crypto.randomUUID();
 
     const next = tasks.map(task =>
@@ -165,7 +167,7 @@ export default function useTasks() {
       id,
       parentId,
       title: title.trim(),
-      notes: "", status: normalizeTaskStatus(status),
+      notes: "", status: normalizeTaskStatus(status), dueDate: dueDate || null,
       done: false,
       collapsed: false,
       createdAt: new Date().toISOString()

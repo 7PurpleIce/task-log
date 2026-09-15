@@ -9,19 +9,21 @@ export default function TaskEditor({
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes);
   const [status, setStatus] = useState(getTaskStatus(task));
+  const [dueDate, setDueDate] = useState(task.dueDate || "");
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [baseline, setBaseline] = useState({ title: task.title, notes: task.notes, status: getTaskStatus(task) });
+  const [baseline, setBaseline] = useState({ title: task.title, notes: task.notes, status: getTaskStatus(task), dueDate: task.dueDate || null });
   useEffect(() => {
     if (!dirty) {
       setTitle(task.title);
       setNotes(task.notes);
       setStatus(getTaskStatus(task));
-      setBaseline({ title: task.title, notes: task.notes, status: getTaskStatus(task) });
+      setDueDate(task.dueDate || "");
+      setBaseline({ title: task.title, notes: task.notes, status: getTaskStatus(task), dueDate: task.dueDate || null });
     }
-  }, [task.title, task.notes, task.status, dirty]);
-  const remoteChanged = baseline.title !== task.title || baseline.notes !== task.notes || baseline.status !== getTaskStatus(task);
+  }, [task.title, task.notes, task.status, task.dueDate, dirty]);
+  const remoteChanged = baseline.title !== task.title || baseline.notes !== task.notes || baseline.status !== getTaskStatus(task) || baseline.dueDate !== (task.dueDate || null);
   const branch = branchIds(tasks, task.id);
 
   const descendants = tasks.filter(item =>
@@ -34,10 +36,10 @@ export default function TaskEditor({
     if (!title.trim() || pending || disabled) return;
     setPending(true);
     try {
-      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status) }, baseline);
+      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null }, baseline);
       setSaved(Boolean(ok));
       if (ok) {
-        setBaseline({ title: title.trim(), notes, status: normalizeTaskStatus(status) });
+        setBaseline({ title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null });
         setDirty(false);
       }
     } finally { setPending(false); }
@@ -81,6 +83,14 @@ export default function TaskEditor({
             setDirty(true);
           }}
         />
+
+        <label htmlFor="task-due-date">Крайний срок</label>
+        <input id="task-due-date" type="date" min="1000-01-01" max="9999-12-31"
+          value={dueDate} disabled={pending}
+          onChange={event => { setDueDate(event.target.value); setSaved(false); setDirty(true); }} />
+        {dueDate && <button type="button" disabled={pending}
+          onClick={() => { setDueDate(""); setSaved(false); setDirty(true); }}>Убрать срок</button>}
+        <p className="hint">До конца выбранного дня по времени вашего устройства.</p>
 
         <label htmlFor="task-notes">Заметки</label>
         <textarea

@@ -1,9 +1,10 @@
+import { deadlineInfo, compareDeadlines } from "../deadlines";
 import { pinnedBranchIds } from "../useTasks";
 import { getTaskStatus } from "../taskStatuses";
 import React from "react";
 
 export default function TaskTree({
-  tasks, selectedId, onSelect, onUpdate, onAdd, disabled,
+  tasks, selectedId, onSelect, onUpdate, onAdd, disabled, sortOrder = "default", now = new Date(),
   emptyTitle = "Начните с главной задачи",
   emptyDescription = "Затем добавляйте ветки и подзадачи кнопкой «＋»."
 }) {
@@ -16,7 +17,7 @@ export default function TaskTree({
 
   const promoted = pinnedBranchIds(tasks);
   for (const siblings of children.values()) {
-    siblings.sort((a, b) => Number(promoted.has(b.id)) - Number(promoted.has(a.id)));
+    siblings.sort((a, b) => Number(promoted.has(b.id)) - Number(promoted.has(a.id)) || compareDeadlines(a, b, sortOrder));
   }
 
   const rows = [];
@@ -52,10 +53,11 @@ export default function TaskTree({
       {rows.map(({ task, depth }) => {
         const nested = children.get(task.id) || [];
 
+        const deadline = deadlineInfo(task, now);
         return (
           <div
             key={task.id}
-            className={`task-row ${selectedId === task.id ? "selected" : ""}`}
+            className={`task-row ${deadline?.overdue ? "overdue" : ""} ${selectedId === task.id ? "selected" : ""}`}
             style={{ marginLeft: depth * 24 }}
           >
             <button
@@ -84,6 +86,7 @@ export default function TaskTree({
               onClick={() => onSelect(task.id)}
             >
               <span className="task-name">{task.title}</span>
+              {deadline && <span className="task-deadline">{deadline.label}</span>}
             </button>
 
             {nested.length > 0 && (
@@ -96,6 +99,13 @@ export default function TaskTree({
               {getTaskStatus(task)}
             </span>
 
+            {deadline?.overdue && <span className="deadline-warning" role="img"
+              aria-label="Крайний срок истёк" title="Крайний срок истёк">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3 2 21h20L12 3ZM12 9v5M12 17h.01" />
+              </svg>
+            </span>}
             <button
               type="button"
               className="icon pin-task"

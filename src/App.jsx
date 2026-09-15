@@ -33,6 +33,7 @@ function Workspace({ session, recovery, onRecovered }) {
   const [selectedId, setSelectedId] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [newStatus, setNewStatus] = useState(DEFAULT_TASK_STATUS);
+  const [newDueDate, setNewDueDate] = useState("");
   const [parentId, setParentId] = useState(null);
   const [notice, setNotice] = useState("");
   const migrationPreferenceKey = "task-log:hide-local-notice:" + (session?.user.id || "local");
@@ -67,11 +68,12 @@ function Workspace({ session, recovery, onRecovered }) {
     event.preventDefault();
     if (!newTitle.trim() || blocked) return;
 
-    const id = await add(newTitle, parentId, newStatus);
+    const id = await add(newTitle, parentId, newStatus, newDueDate);
 
     if (id) {
       setNewTitle("");
       setNewStatus(DEFAULT_TASK_STATUS);
+      setNewDueDate("");
       setSelectedId(id);
     }
   }
@@ -217,6 +219,11 @@ function Workspace({ session, recovery, onRecovered }) {
                 onChange={event => setNewStatus(event.target.value)}
                 disabled={blocked}
               />
+              <label className="composer-deadline">Крайний срок
+                <input type="date" min="1000-01-01" max="9999-12-31"
+                  value={newDueDate} disabled={blocked}
+                  onChange={event => setNewDueDate(event.target.value)} />
+              </label>
               <button
                 type="submit"
                 className="primary"

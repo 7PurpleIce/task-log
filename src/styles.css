@@ -356,3 +356,16 @@ header > .backup-actions > button {
 
 .pin-task { display: grid; place-items: center; min-height: 32px; color: var(--muted); }
 .pin-task[aria-pressed="true"] { color: var(--orange); background: #34251d; }
+
+.composer-deadline { flex: 1 1 180px; font-size: 13px; color: var(--muted); }
+.composer-deadline input { display: block; margin-top: 5px; }
+.deadline-sort { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 14px; color: var(--muted); }
+.deadline-sort select { font: inherit; padding: 8px; background: var(--panel); color: #e8e9eb; border: 1px solid var(--line); border-radius: 3px; }
+.task-deadline { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+.deadline-warning { display: grid; place-items: center; flex-shrink: 0; color: #ff6868; }
+.task-row.overdue:hover { border-color: #ff6868; background: #302023; }
+.task-row.overdue .task-title:hover:not(:disabled),
+.task-row.overdue button:hover:not(:disabled) { color: #ff6868; border-color: #ff6868; }
+.task-row.overdue :focus-visible { outline-color: #ff6868; }
+.task-row.overdue .task-deadline { color: #ff8d8d; }
+@media (max-width: 560px) { .composer-deadline { flex: none; width: 100%; } }
