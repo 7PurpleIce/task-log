@@ -127,14 +127,14 @@ function Workspace({ session, recovery, onRecovered }) {
 
         <div className="backup-actions">
           {session && local.tasks.length > 0 && migrationHidden && (
-            <button type="button" title="Показать локальные задачи" onClick={() => setMigrationVisibility(false)}>
+            <button type="button" title="Показать сохранённые в этом браузере задачи и возможность их экспорта" onClick={() => setMigrationVisibility(false)}>
               Локальные задачи
             </button>
           )}
-          <button onClick={() => exportTasks()} disabled={blocked}>
+          <button title="Скачать резервную копию всех задач, включая выполненные, в JSON-файл" onClick={() => exportTasks()} disabled={blocked}>
             Экспорт
           </button>
-          <button disabled={Boolean(session) && blocked} onClick={() => importInput.current?.click()}>
+          <button title="Загрузить задачи из JSON-файла. После подтверждения текущие задачи будут заменены" disabled={Boolean(session) && blocked} onClick={() => importInput.current?.click()}>
             Восстановить
           </button>
           <input
@@ -148,7 +148,7 @@ function Workspace({ session, recovery, onRecovered }) {
       </header>
 
       {session && <div className="sync-status" role="status">{cloud.status}
-        <button disabled={cloud.busy} onClick={cloud.refresh}>Проверить сейчас</button>
+        <button title="Проверить изменения в облаке и загрузить актуальные задачи с других устройств" disabled={cloud.busy} onClick={cloud.refresh}>Проверить сейчас</button>
       </div>}
       {session && local.tasks.length > 0 && !migrationHidden && <div className="migration">
         <p>В этом браузере остались прежние локальные задачи: {local.tasks.length}. Их копия сохранена отдельно.</p>
