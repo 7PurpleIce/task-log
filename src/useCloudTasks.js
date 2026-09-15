@@ -1,7 +1,8 @@
-import { DEFAULT_TASK_STATUS, getTaskStatus, normalizeTaskStatus } from "./taskStatuses";
+import { readCloudUpdate } from "./tasks/cloudRepository";
+import { DEFAULT_TASK_STATUS } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useEffect, useRef, useState } from "react";
-import { branchIds, validate, applyTaskChanges, tasksByStatus } from "./useTasks";
+import { createTask, updateTask, removeTask, validate, tasksByStatus } from "./tasks/model";
 import { cloudRequest } from "./cloud";
 
 export default function useCloudTasks(owner) {
@@ -11,6 +12,7 @@ export default function useCloudTasks(owner) {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Загрузка облачных задач…");
   const current = useRef(doc);
+  const loaded = useRef(false);
   const writing = useRef(false);
   const reading = useRef(false);
   const active = useRef(true);
@@ -23,6 +25,7 @@ export default function useCloudTasks(owner) {
     }
     current.current = next;
     setDoc(next);
+    loaded.current = true;
     setReady(true);
   }
 
@@ -31,10 +34,10 @@ export default function useCloudTasks(owner) {
     reading.current = true;
     const start = epoch.current;
     try {
-      const rows = await cloudRequest(owner, "task_logs?select=tasks,revision&user_id=eq." + encodeURIComponent(owner));
+      const next = await readCloudUpdate(cloudRequest, owner, current.current, loaded.current,
+        () => active.current && start === epoch.current);
       if (!active.current || start !== epoch.current) return;
-      const next = rows[0] || { tasks: [], revision: 0 };
-      if (next.revision >= current.current.revision) accept(next);
+      if (next) accept(next);
       setStatus("Синхронизировано");
       // Write errors stay visible until a successful write or explicit dismissal.
     } catch (err) {
@@ -100,33 +103,23 @@ export default function useCloudTasks(owner) {
     }
   }
 
-  async function add(title, parentId = null, status = DEFAULT_TASK_STATUS, dueDate = null) {
-    if (!title.trim()) return null;
-    if (parentId !== null && !doc.tasks.some(t => t.id === parentId)) {
-      setError("Родительская задача удалена. Выберите другую.");
-      return null;
-    }
-    const id = crypto.randomUUID();
-    const next = doc.tasks.map(t => t.id === parentId ? { ...t, collapsed: false } : t);
-    next.unshift({ id, parentId, title: title.trim(), notes: "", status: normalizeTaskStatus(status), dueDate: dueDate || null, done: false,
-      collapsed: false, createdAt: new Date().toISOString() });
-    return await commit(next) ? id : null;
+  async function mutate(transform) {
+    try { return await commit(transform(doc.tasks)); }
+    catch (err) { logError("save_failed", err); setError(err.message); return false; }
   }
 
-  async function update(id, changes, original) {
-    const task = doc.tasks.find(t => t.id === id);
-    if (!task) { setError("Задача уже удалена."); return false; }
-    if (original && (original.title !== task.title || original.notes !== task.notes || getTaskStatus(original) !== getTaskStatus(task) || (original.dueDate || null) !== (task.dueDate || null))) {
-      logEvent("conflict", "warn");
-      setError("Название, заметки, статус или срок изменены на другом устройстве. Скопируйте свой черновик, затем нажмите «Загрузить актуальное».");
-      return false;
-    }
-    return commit(applyTaskChanges(doc.tasks, id, changes));
+  async function add(title, parentId = null, status = DEFAULT_TASK_STATUS, dueDate = null) {
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    return await mutate(tasks => createTask(tasks, { title, parentId, status, dueDate }, id, createdAt)) ? id : null;
+  }
+
+  function update(id, changes, original) {
+    return mutate(tasks => updateTask(tasks, id, changes, original));
   }
 
   function remove(id) {
-    const ids = branchIds(doc.tasks, id);
-    return commit(doc.tasks.filter(t => !ids.has(t.id)));
+    return mutate(tasks => removeTask(tasks, id));
   }
 
   function clearCompleted() {
@@ -141,3 +134,4 @@ export default function useCloudTasks(owner) {
   return { tasks: doc.tasks, error, blocked: !ready || busy, busy, ready,
     status, add, update, remove, restore, clearCompleted, refresh: pull };
 }
+

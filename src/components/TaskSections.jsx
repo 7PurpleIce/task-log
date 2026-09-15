@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import TaskTree from "./TaskTree";
-import { tasksByStatus } from "../useTasks";
+import { tasksByStatus } from "../tasks/model";
 
 export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) {
   const [sortOrder, setSortOrder] = useState("default");
@@ -51,3 +51,4 @@ export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) 
     </section>
   </>;
 }
+

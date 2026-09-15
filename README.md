@@ -33,3 +33,14 @@ Account switching remounts the workspace to prevent mixing data between users.
 Checked database ownership isolation, anonymous access denial, direct-write denial, and stale-revision rejection in a rolled-back transaction.
 Exercised cloud hook add/update/delete, remote refresh, document validation, and stale-editor rejection with mocked requests.
 Production build runs in the existing GitHub Pages workflow. Two-device browser sign-in requires the email configuration above.
+
+
+### React structure and verification
+
+- `src/tasks/model.js`: shared task operations and validation for local and cloud storage.
+- `src/tasks/localRepository.js`: serializes local writes across tabs using Web Locks; reads the latest document before applying an operation. Local editing requires a modern browser with Web Locks in a secure context (HTTPS or localhost).
+- `src/tasks/cloudRepository.js`: checks the revision before downloading the task document.
+- `useTaskDraft`: keeps drafts in the workspace while switching between tasks. Reloading still requires saving; the browser warns about unsaved drafts.
+- `TaskComposer` and `TaskRow`: task creation and row presentation components.
+
+Run `npm test` for model, local write, draft and cloud revision tests. GitHub Actions runs these before the production build and deployment.

@@ -1,5 +1,5 @@
 import { DEFAULT_TASK_STATUS } from "./taskStatuses";
-import TaskStatusInput from "./components/TaskStatusInput";
+import TaskComposer from "./components/TaskComposer";
 import { logError } from "./diagnostics";
 import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
@@ -52,8 +52,16 @@ function Workspace({ session, recovery, onRecovered }) {
     }
   }
 
+  const taskDrafts = useRef(new Map());
   const titleInput = useRef(null);
   const importInput = useRef(null);
+  useEffect(() => {
+    const warn = event => {
+      if (taskDrafts.current.size) { event.preventDefault(); event.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
 
   const selected = tasks.find(task => task.id === selectedId);
   const parent = tasks.find(task => task.id === parentId);
@@ -191,48 +199,10 @@ function Workspace({ session, recovery, onRecovered }) {
             <div><b>{done}</b><span>выполнено</span></div>
           </div>
 
-          <div className="composer">
-            <div className="composer-context">
-              <span>
-                {parent ? `Подзадача для: ${parent.title}` : "Новая главная задача"}
-              </span>
-              {parent && (
-                <button onClick={() => setParentId(null)}>Отменить</button>
-              )}
-            </div>
-
-            <form onSubmit={createTask}>
-              <input
-                ref={titleInput}
-                value={newTitle}
-                onChange={event => setNewTitle(event.target.value)}
-                placeholder="Что нужно сделать?"
-                aria-label="Название новой задачи"
-                maxLength={300}
-                required
-                disabled={blocked}
-              />
-              <TaskStatusInput
-                aria-label="Статус новой задачи"
-                title="Введите свой этап выполнения"
-                value={newStatus}
-                onChange={event => setNewStatus(event.target.value)}
-                disabled={blocked}
-              />
-              <label className="composer-deadline">Крайний срок
-                <input type="date" min="1000-01-01" max="9999-12-31"
-                  value={newDueDate} disabled={blocked}
-                  onChange={event => setNewDueDate(event.target.value)} />
-              </label>
-              <button
-                type="submit"
-                className="primary"
-                disabled={blocked || !newTitle.trim()}
-              >
-                ＋ Добавить
-              </button>
-            </form>
-          </div>
+          <TaskComposer parent={parent} setParentId={setParentId} createTask={createTask}
+            titleInput={titleInput} newTitle={newTitle} setNewTitle={setNewTitle}
+            newStatus={newStatus} setNewStatus={setNewStatus}
+            newDueDate={newDueDate} setNewDueDate={setNewDueDate} blocked={blocked} />
 
           <TaskSections
             onClearCompleted={async () => {
@@ -258,6 +228,7 @@ function Workspace({ session, recovery, onRecovered }) {
         {selected ? (
           <TaskEditor
             key={selected.id}
+            drafts={taskDrafts}
             disabled={blocked}
             task={selected}
             tasks={tasks}
