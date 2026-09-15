@@ -1,5 +1,5 @@
-import { getTaskStatus } from "../taskStatuses";
-import TaskStatusSelect from "./TaskStatusSelect";
+import { getTaskStatus, normalizeTaskStatus } from "../taskStatuses";
+import TaskStatusInput from "./TaskStatusInput";
 import React, { useEffect, useState } from "react";
 import { branchIds } from "../useTasks";
 
@@ -34,10 +34,10 @@ export default function TaskEditor({
     if (!title.trim() || pending || disabled) return;
     setPending(true);
     try {
-      const ok = await onUpdate(task.id, { title: title.trim(), notes, status }, baseline);
+      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status) }, baseline);
       setSaved(Boolean(ok));
       if (ok) {
-        setBaseline({ title: title.trim(), notes, status });
+        setBaseline({ title: title.trim(), notes, status: normalizeTaskStatus(status) });
         setDirty(false);
       }
     } finally { setPending(false); }
@@ -71,7 +71,7 @@ export default function TaskEditor({
         />
 
         <label htmlFor="task-status">Статус</label>
-        <TaskStatusSelect
+        <TaskStatusInput
           id="task-status"
           value={status}
           disabled={pending}

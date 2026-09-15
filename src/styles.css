@@ -320,7 +320,7 @@ header > .backup-actions > button {
   header > .backup-actions > button { min-height: 44px; }
 }
 
-.task-status-select {
+.task-status-input {
   width: 100%;
   min-width: 0;
   padding: 12px;
@@ -330,14 +330,17 @@ header > .backup-actions > button {
   border: 1px solid #40464e;
   border-radius: 3px;
 }
-.task-status-select:disabled { opacity: .4; }
+.task-status-input:disabled { opacity: .4; }
 .composer form { flex-wrap: wrap; }
-.composer form > input { flex: 1 1 220px; width: auto; }
-.composer .task-status-select { flex: 0 1 230px; width: 230px; }
+.composer form > input:not(.task-status-input) { flex: 1 1 220px; width: auto; }
+.composer .task-status-input { flex: 0 1 230px; width: 230px; }
 .task-status {
   display: block;
   width: fit-content;
-  margin-top: 5px;
+  flex: 0 0 auto;
+  max-width: 38%;
+  overflow-wrap: anywhere;
+  text-align: center;
   padding: 2px 7px;
   border: 1px solid #66503b;
   border-radius: 3px;
@@ -347,6 +350,6 @@ header > .backup-actions > button {
   line-height: 1.5;
 }
 @media (max-width: 560px) {
-  .composer form > input,
-  .composer .task-status-select { flex: none; width: 100%; }
+  .composer form > input:not(.task-status-input),
+  .composer .task-status-input { flex: none; width: 100%; }
 }

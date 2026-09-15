@@ -1,5 +1,5 @@
 import { DEFAULT_TASK_STATUS } from "./taskStatuses";
-import TaskStatusSelect from "./components/TaskStatusSelect";
+import TaskStatusInput from "./components/TaskStatusInput";
 import { logError } from "./diagnostics";
 import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
@@ -210,9 +210,9 @@ function Workspace({ session, recovery, onRecovered }) {
                 required
                 disabled={blocked}
               />
-              <TaskStatusSelect
+              <TaskStatusInput
                 aria-label="Статус новой задачи"
-                title="Выберите статус задачи"
+                title="Введите свой этап выполнения"
                 value={newStatus}
                 onChange={event => setNewStatus(event.target.value)}
                 disabled={blocked}

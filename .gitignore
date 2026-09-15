@@ -3,3 +3,6 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Downloaded task backups must stay local.
+task-log-*.json

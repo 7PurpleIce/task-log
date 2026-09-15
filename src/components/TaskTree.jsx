@@ -78,7 +78,6 @@ export default function TaskTree({
               onClick={() => onSelect(task.id)}
             >
               <span className="task-name">{task.title}</span>
-              <span className="task-status" aria-label={`Статус: ${getTaskStatus(task)}`}>{getTaskStatus(task)}</span>
             </button>
 
             {nested.length > 0 && (
@@ -86,6 +85,10 @@ export default function TaskTree({
                 {nested.filter(item => item.done).length}/{nested.length}
               </span>
             )}
+
+            <span className="task-status" title={`Статус: ${getTaskStatus(task)}`}>
+              {getTaskStatus(task)}
+            </span>
 
             <button
               className="icon add-child"

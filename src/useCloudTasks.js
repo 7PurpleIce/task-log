@@ -1,4 +1,4 @@
-import { DEFAULT_TASK_STATUS, getTaskStatus } from "./taskStatuses";
+import { DEFAULT_TASK_STATUS, getTaskStatus, normalizeTaskStatus } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useEffect, useRef, useState } from "react";
 import { branchIds, validate, applyTaskChanges, tasksByStatus } from "./useTasks";
@@ -108,7 +108,7 @@ export default function useCloudTasks(owner) {
     }
     const id = crypto.randomUUID();
     const next = doc.tasks.map(t => t.id === parentId ? { ...t, collapsed: false } : t);
-    next.unshift({ id, parentId, title: title.trim(), notes: "", status, done: false,
+    next.unshift({ id, parentId, title: title.trim(), notes: "", status: normalizeTaskStatus(status), done: false,
       collapsed: false, createdAt: new Date().toISOString() });
     return await commit(next) ? id : null;
   }

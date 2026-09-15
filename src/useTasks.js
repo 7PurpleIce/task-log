@@ -1,4 +1,4 @@
-import { TASK_STATUSES, DEFAULT_TASK_STATUS } from "./taskStatuses";
+import { MAX_TASK_STATUS_LENGTH, DEFAULT_TASK_STATUS, normalizeTaskStatus } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useState } from "react";
 
@@ -62,7 +62,7 @@ export function validate(data) {
       !task.title.trim() ||
       typeof task.notes !== "string" ||
       typeof task.done !== "boolean" ||
-      (task.status !== undefined && !TASK_STATUSES.includes(task.status)) ||
+      (task.status !== undefined && (typeof task.status !== "string" || !task.status.trim() || task.status.length > MAX_TASK_STATUS_LENGTH)) ||
       typeof task.collapsed !== "boolean" ||
       typeof task.createdAt !== "string" ||
       !Number.isFinite(Date.parse(task.createdAt)) ||
@@ -145,7 +145,7 @@ export default function useTasks() {
       id,
       parentId,
       title: title.trim(),
-      notes: "", status,
+      notes: "", status: normalizeTaskStatus(status),
       done: false,
       collapsed: false,
       createdAt: new Date().toISOString()
