@@ -141,7 +141,7 @@ h2 { font-size: 20px; font-weight: 500; }
 }
 
 .composer-context button { padding: 4px 8px; flex-shrink: 0; }
-.composer form { display: flex; gap: 10px; }
+.composer form { display: flex; align-items: flex-end; gap: 8px; }
 .composer form button { flex-shrink: 0; }
 
 .primary {
@@ -333,7 +333,7 @@ header > .backup-actions > button {
 .task-status-input:disabled { opacity: .4; }
 .composer form { flex-wrap: wrap; }
 .composer form > input:not(.task-status-input) { flex: 1 1 220px; width: auto; }
-.composer .task-status-input { flex: 0 1 230px; width: 230px; }
+.composer .task-status-input { flex: 0 1 170px; width: 170px; }
 .task-status {
   display: block;
   width: fit-content;
@@ -357,11 +357,11 @@ header > .backup-actions > button {
 .pin-task { display: grid; place-items: center; min-height: 32px; color: var(--muted); }
 .pin-task[aria-pressed="true"] { color: var(--orange); background: #34251d; }
 
-.composer-deadline { flex: 1 1 180px; font-size: 13px; color: var(--muted); }
-.composer-deadline input { display: block; margin-top: 5px; }
+.composer-deadline { flex: 0 0 170px; width: 170px; font-size: 12px; color: var(--muted); }
+.composer-deadline input { display: block; margin-top: 4px; }
 .deadline-sort { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 14px; color: var(--muted); }
 .deadline-sort select { font: inherit; padding: 8px; background: var(--panel); color: #e8e9eb; border: 1px solid var(--line); border-radius: 3px; }
-.task-deadline { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+.task-deadline { display: inline; font-size: 12px; color: var(--muted); }
 .deadline-warning { display: grid; place-items: center; flex-shrink: 0; color: #ff6868; }
 .task-row.overdue:hover { border-color: #ff6868; background: #302023; }
 .task-row.overdue .task-title:hover:not(:disabled),
@@ -369,3 +369,16 @@ header > .backup-actions > button {
 .task-row.overdue :focus-visible { outline-color: #ff6868; }
 .task-row.overdue .task-deadline { color: #ff8d8d; }
 @media (max-width: 560px) { .composer-deadline { flex: none; width: 100%; } }
+
+.composer { padding: 12px 16px; }
+.composer-context { margin-bottom: 8px; font-size: 13px; }
+.composer form input,
+.composer form > button { height: 38px; padding: 8px 10px; font-size: 14px; }
+.composer form > button { white-space: nowrap; }
+.task-title { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; row-gap: 3px; }
+.task-name { min-width: 0; max-width: 100%; }
+@media (max-width: 560px) {
+  .composer form { align-items: stretch; }
+  .composer-deadline { flex: none; width: 170px; max-width: 100%; }
+  .composer form > button { align-self: flex-start; }
+}
