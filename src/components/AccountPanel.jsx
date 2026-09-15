@@ -43,18 +43,22 @@ export default function AccountPanel({ session, recovery, onRecovered, busy }) {
       </div>
       {session && !recovery ? (
         <>
-        <button type="button" className="wide" disabled={pending}
-          aria-expanded={editingNickname} onClick={() => setEditingNickname(value => !value)}>
-          {editingNickname ? "Закрыть редактирование ника" : "Изменить ник"}
-        </button>
+        <div className="profile-actions">
+          <button type="button" disabled={busy || pending} onClick={async () => {
+            setPending(true);
+            try {
+              if (window.confirm("Выйти из аккаунта? Несохранённый текст редактора будет потерян.")) await signOut();
+            } catch (err) { setMessage(err.message); }
+            finally { setPending(false); }
+          }}>Выйти</button>
+          <button type="button" disabled={pending}
+            aria-expanded={editingNickname}
+            title={editingNickname ? "Закрыть редактирование ника" : "Изменить ник"}
+            onClick={() => setEditingNickname(value => !value)}>
+            {editingNickname ? "Закрыть" : "Изменить ник"}
+          </button>
+        </div>
         {editingNickname && <NicknameEditor user={session.user} disabled={false} onBusyChange={setPending} />}
-        <button disabled={busy || pending} onClick={async () => {
-          setPending(true);
-          try {
-            if (window.confirm("Выйти из аккаунта? Несохранённый текст редактора будет потерян.")) await signOut();
-          } catch (err) { setMessage(err.message); }
-          finally { setPending(false); }
-        }}>Выйти</button>
         </>
       ) : (
         <form onSubmit={submit} className="account-form">

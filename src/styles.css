@@ -382,3 +382,7 @@ header > .backup-actions > button {
   .composer-deadline { flex: none; width: 170px; max-width: 100%; }
   .composer form > button { align-self: flex-start; }
 }
+
+.profile-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 12px 0; }
+.profile-actions > button { flex: 0 1 120px; min-width: 0; height: 36px; padding: 6px 10px; font-size: 13px; white-space: nowrap; }
+@media (pointer: coarse) { .profile-actions > button { height: 44px; } }
