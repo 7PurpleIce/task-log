@@ -353,3 +353,6 @@ header > .backup-actions > button {
   .composer form > input:not(.task-status-input),
   .composer .task-status-input { flex: none; width: 100%; }
 }
+
+.pin-task { display: grid; place-items: center; min-height: 32px; color: var(--muted); }
+.pin-task[aria-pressed="true"] { color: var(--orange); background: #34251d; }

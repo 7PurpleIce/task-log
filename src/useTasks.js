@@ -21,8 +21,12 @@ export function branchIds(tasks, rootId) {
 export function applyTaskChanges(tasks, id, changes) {
   const completedBranch = changes.done === true ? branchIds(tasks, id) : null;
   return tasks.map(task => {
-    if (task.id === id) return { ...task, ...changes };
-    if (completedBranch?.has(task.id)) return { ...task, done: true };
+    if (task.id === id) {
+      const next = { ...task, ...changes };
+      if (next.done) next.pinned = false;
+      return next;
+    }
+    if (completedBranch?.has(task.id)) return { ...task, done: true, pinned: false };
     return task;
   });
 }
@@ -45,6 +49,21 @@ export function tasksByStatus(tasks, done) {
   });
 }
 
+// Promote pinned branches without changing parent links or stored creation order.
+export function pinnedBranchIds(tasks) {
+  const byId = new Map(tasks.map(task => [task.id, task]));
+  const promoted = new Set();
+  for (const task of tasks) {
+    if (!task.pinned || task.done) continue;
+    let current = task;
+    while (current && !promoted.has(current.id)) {
+      promoted.add(current.id);
+      current = byId.get(current.parentId);
+    }
+  }
+  return promoted;
+}
+
 export function validate(data) {
   if (data?.version !== 1 || !Array.isArray(data.tasks)) {
     throw new Error("Неверный формат резервной копии.");
@@ -62,6 +81,7 @@ export function validate(data) {
       !task.title.trim() ||
       typeof task.notes !== "string" ||
       typeof task.done !== "boolean" ||
+      (task.pinned !== undefined && typeof task.pinned !== "boolean") ||
       (task.status !== undefined && (typeof task.status !== "string" || !task.status.trim() || task.status.length > MAX_TASK_STATUS_LENGTH)) ||
       typeof task.collapsed !== "boolean" ||
       typeof task.createdAt !== "string" ||
