@@ -1,3 +1,4 @@
+import { validateNickname } from "./profile";
 import { logEvent, logError } from "./diagnostics";
 // Only a public client key. Database permissions enforce ownership.
 const URL = "https://juodnoiwehmlqzhhhukp.supabase.co";
@@ -176,4 +177,21 @@ export async function finishAuthRedirect() {
     expires_at: Math.floor(Date.now() / 1000) + Number(hash.get("expires_in") || 3600)
   });
   return hash.get("type") === "recovery";
+}
+
+export async function changeNickname(value) {
+  const name = validateNickname(value);
+  const owner = getSession()?.user.id;
+  if (!owner) throw new Error("Войдите в аккаунт, чтобы изменить ник.");
+  const token = await accessToken(owner);
+  const user = await request("/auth/v1/user", {
+    method: "PUT", token, body: { data: { display_name: name, full_name: name } }
+  });
+  const session = getSession();
+  if (session?.user.id !== owner || user?.id !== owner) {
+    throw new Error("Аккаунт изменился. Повторите действие.");
+  }
+  // Keep the newest tokens if another request refreshed the session while saving.
+  putSession({ ...session, user });
+  return user;
 }

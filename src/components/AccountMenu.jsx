@@ -1,3 +1,4 @@
+import { getNickname } from "../profile";
 import React, { useEffect, useId, useRef, useState } from "react";
 import AccountPanel from "./AccountPanel";
 
@@ -39,8 +40,8 @@ export default function AccountMenu(props) {
     if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
   }}>
     <button ref={trigger} type="button" className="account-trigger"
-      aria-label={props.session ? "Мой аккаунт" : "Войти в аккаунт"}
-      title={props.session ? "Мой аккаунт" : "Войти в аккаунт"}
+      aria-label={props.session ? (getNickname(props.session.user) || "Мой аккаунт") : "Войти в аккаунт"}
+      title={props.session ? (getNickname(props.session.user) || "Мой аккаунт") : "Войти в аккаунт"}
       aria-expanded={open} aria-controls={panelId}
       onClick={() => setOpen(value => !value)}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none"

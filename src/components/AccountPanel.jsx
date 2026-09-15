@@ -1,3 +1,5 @@
+import NicknameEditor from "./NicknameEditor";
+import { getNickname } from "../profile";
 import React, { useState } from "react";
 import { signIn, signUp, signOut, resetPassword, changePassword } from "../cloud";
 
@@ -34,11 +36,13 @@ export default function AccountPanel({ session, recovery, onRecovered, busy }) {
   return (
     <section className="account-panel" aria-label="Аккаунт и синхронизация">
       <div>
-        <strong>{session ? "Облачный журнал" : "Синхронизация с телефоном"}</strong>
+        <strong>{session ? (getNickname(session.user) || "Облачный журнал") : "Синхронизация с телефоном"}</strong>
         <p className="hint">{session ? session.user.email :
           "Войдите в один аккаунт на компьютере и телефоне. Без входа задачи хранятся только в этом браузере."}</p>
       </div>
       {session && !recovery ? (
+        <>
+        <NicknameEditor user={session.user} disabled={busy} onBusyChange={setPending} />
         <button disabled={busy || pending} onClick={async () => {
           setPending(true);
           try {
@@ -46,6 +50,7 @@ export default function AccountPanel({ session, recovery, onRecovered, busy }) {
           } catch (err) { setMessage(err.message); }
           finally { setPending(false); }
         }}>Выйти</button>
+        </>
       ) : (
         <form onSubmit={submit} className="account-form">
           {!recovery && <label>Email
