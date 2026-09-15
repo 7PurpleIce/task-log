@@ -1,3 +1,4 @@
+import { getTaskStatus } from "../taskStatuses";
 import React from "react";
 
 export default function TaskTree({
@@ -76,7 +77,8 @@ export default function TaskTree({
               aria-pressed={selectedId === task.id}
               onClick={() => onSelect(task.id)}
             >
-              {task.title}
+              <span className="task-name">{task.title}</span>
+              <span className="task-status" aria-label={`Статус: ${getTaskStatus(task)}`}>{getTaskStatus(task)}</span>
             </button>
 
             {nested.length > 0 && (

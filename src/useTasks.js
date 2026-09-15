@@ -1,3 +1,4 @@
+import { TASK_STATUSES, DEFAULT_TASK_STATUS } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useState } from "react";
 
@@ -61,6 +62,7 @@ export function validate(data) {
       !task.title.trim() ||
       typeof task.notes !== "string" ||
       typeof task.done !== "boolean" ||
+      (task.status !== undefined && !TASK_STATUSES.includes(task.status)) ||
       typeof task.collapsed !== "boolean" ||
       typeof task.createdAt !== "string" ||
       !Number.isFinite(Date.parse(task.createdAt)) ||
@@ -132,7 +134,7 @@ export default function useTasks() {
     }
   }
 
-  function add(title, parentId = null) {
+  function add(title, parentId = null, status = DEFAULT_TASK_STATUS) {
     const id = crypto.randomUUID();
 
     const next = tasks.map(task =>
@@ -143,7 +145,7 @@ export default function useTasks() {
       id,
       parentId,
       title: title.trim(),
-      notes: "",
+      notes: "", status,
       done: false,
       collapsed: false,
       createdAt: new Date().toISOString()

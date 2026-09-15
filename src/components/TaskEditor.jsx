@@ -1,3 +1,5 @@
+import { getTaskStatus } from "../taskStatuses";
+import TaskStatusSelect from "./TaskStatusSelect";
 import React, { useEffect, useState } from "react";
 import { branchIds } from "../useTasks";
 
@@ -6,18 +8,20 @@ export default function TaskEditor({
 }) {
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes);
+  const [status, setStatus] = useState(getTaskStatus(task));
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [baseline, setBaseline] = useState({ title: task.title, notes: task.notes });
+  const [baseline, setBaseline] = useState({ title: task.title, notes: task.notes, status: getTaskStatus(task) });
   useEffect(() => {
     if (!dirty) {
       setTitle(task.title);
       setNotes(task.notes);
-      setBaseline({ title: task.title, notes: task.notes });
+      setStatus(getTaskStatus(task));
+      setBaseline({ title: task.title, notes: task.notes, status: getTaskStatus(task) });
     }
-  }, [task.title, task.notes, dirty]);
-  const remoteChanged = baseline.title !== task.title || baseline.notes !== task.notes;
+  }, [task.title, task.notes, task.status, dirty]);
+  const remoteChanged = baseline.title !== task.title || baseline.notes !== task.notes || baseline.status !== getTaskStatus(task);
   const branch = branchIds(tasks, task.id);
 
   const descendants = tasks.filter(item =>
@@ -30,10 +34,10 @@ export default function TaskEditor({
     if (!title.trim() || pending || disabled) return;
     setPending(true);
     try {
-      const ok = await onUpdate(task.id, { title: title.trim(), notes }, baseline);
+      const ok = await onUpdate(task.id, { title: title.trim(), notes, status }, baseline);
       setSaved(Boolean(ok));
       if (ok) {
-        setBaseline({ title: title.trim(), notes });
+        setBaseline({ title: title.trim(), notes, status });
         setDirty(false);
       }
     } finally { setPending(false); }
@@ -61,6 +65,18 @@ export default function TaskEditor({
           maxLength={300}
           onChange={event => {
             setTitle(event.target.value);
+            setSaved(false);
+            setDirty(true);
+          }}
+        />
+
+        <label htmlFor="task-status">Статус</label>
+        <TaskStatusSelect
+          id="task-status"
+          value={status}
+          disabled={pending}
+          onChange={event => {
+            setStatus(event.target.value);
             setSaved(false);
             setDirty(true);
           }}

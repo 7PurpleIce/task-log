@@ -1,3 +1,4 @@
+import { DEFAULT_TASK_STATUS, getTaskStatus } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useEffect, useRef, useState } from "react";
 import { branchIds, validate, applyTaskChanges, tasksByStatus } from "./useTasks";
@@ -99,7 +100,7 @@ export default function useCloudTasks(owner) {
     }
   }
 
-  async function add(title, parentId = null) {
+  async function add(title, parentId = null, status = DEFAULT_TASK_STATUS) {
     if (!title.trim()) return null;
     if (parentId !== null && !doc.tasks.some(t => t.id === parentId)) {
       setError("Родительская задача удалена. Выберите другую.");
@@ -107,7 +108,7 @@ export default function useCloudTasks(owner) {
     }
     const id = crypto.randomUUID();
     const next = doc.tasks.map(t => t.id === parentId ? { ...t, collapsed: false } : t);
-    next.unshift({ id, parentId, title: title.trim(), notes: "", done: false,
+    next.unshift({ id, parentId, title: title.trim(), notes: "", status, done: false,
       collapsed: false, createdAt: new Date().toISOString() });
     return await commit(next) ? id : null;
   }
@@ -115,9 +116,9 @@ export default function useCloudTasks(owner) {
   async function update(id, changes, original) {
     const task = doc.tasks.find(t => t.id === id);
     if (!task) { setError("Задача уже удалена."); return false; }
-    if (original && (original.title !== task.title || original.notes !== task.notes)) {
+    if (original && (original.title !== task.title || original.notes !== task.notes || getTaskStatus(original) !== getTaskStatus(task))) {
       logEvent("conflict", "warn");
-      setError("Название или заметки изменены на другом устройстве. Скопируйте свой черновик, затем нажмите «Загрузить актуальное».");
+      setError("Название, заметки или статус изменены на другом устройстве. Скопируйте свой черновик, затем нажмите «Загрузить актуальное».");
       return false;
     }
     return commit(applyTaskChanges(doc.tasks, id, changes));

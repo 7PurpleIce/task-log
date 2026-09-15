@@ -1,3 +1,5 @@
+import { DEFAULT_TASK_STATUS } from "./taskStatuses";
+import TaskStatusSelect from "./components/TaskStatusSelect";
 import { logError } from "./diagnostics";
 import React, { useEffect, useRef, useState } from "react";
 import useTasks from "./useTasks";
@@ -30,6 +32,7 @@ function Workspace({ session, recovery, onRecovered }) {
   const { tasks, error, blocked, add, update, remove, restore, clearCompleted } = session ? cloud : local;
   const [selectedId, setSelectedId] = useState(null);
   const [newTitle, setNewTitle] = useState("");
+  const [newStatus, setNewStatus] = useState(DEFAULT_TASK_STATUS);
   const [parentId, setParentId] = useState(null);
   const [notice, setNotice] = useState("");
   const migrationPreferenceKey = "task-log:hide-local-notice:" + (session?.user.id || "local");
@@ -64,10 +67,11 @@ function Workspace({ session, recovery, onRecovered }) {
     event.preventDefault();
     if (!newTitle.trim() || blocked) return;
 
-    const id = await add(newTitle, parentId);
+    const id = await add(newTitle, parentId, newStatus);
 
     if (id) {
       setNewTitle("");
+      setNewStatus(DEFAULT_TASK_STATUS);
       setSelectedId(id);
     }
   }
@@ -204,6 +208,13 @@ function Workspace({ session, recovery, onRecovered }) {
                 aria-label="Название новой задачи"
                 maxLength={300}
                 required
+                disabled={blocked}
+              />
+              <TaskStatusSelect
+                aria-label="Статус новой задачи"
+                title="Выберите статус задачи"
+                value={newStatus}
+                onChange={event => setNewStatus(event.target.value)}
                 disabled={blocked}
               />
               <button
