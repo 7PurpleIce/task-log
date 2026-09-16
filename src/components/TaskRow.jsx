@@ -12,7 +12,7 @@ export default function TaskRow({ task, depth, nested, deadline, selectedId, dis
             <button type="button" className="icon drag-handle" disabled={disabled}
               {...movement.handleProps(task)} title="Перетащить ветку или выбрать перенос"
               aria-label={`Переместить ветку «${task.title}»`} aria-pressed={movement.moving === task.id}>⠿</button>
-            {movement.moving && movement.allowed(task.id) && <button type="button"
+            {movement.moving && !movement.preview && movement.allowed(task.id) && <button type="button"
               className="move-here" onClick={() => movement.drop(task.id)}>Поместить сюда</button>}
             <button
               className="icon"
@@ -35,6 +35,7 @@ export default function TaskRow({ task, depth, nested, deadline, selectedId, dis
             />
 
             <button
+              {...movement.pointerProps(task)}
               className={`task-title ${task.done ? "done" : ""}`}
               aria-pressed={selectedId === task.id}
               onClick={() => onSelect(task.id)}
