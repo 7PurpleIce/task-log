@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { logEvent, logError } from './diagnostics';
-import { createTask, updateTask, removeTask, tasksByStatus, validate } from './tasks/model';
+import { createTask, updateTask, removeTask, moveTask, tasksByStatus, validate } from './tasks/model';
 import { LOCAL_TASKS_KEY, readLocalTasks, writeLocalTasks } from './tasks/localRepository';
 
 function initialState() {
@@ -53,6 +53,7 @@ export default function useTasks() {
   return { tasks: state.tasks, error: state.error, blocked: state.blocked || busy,
     add,
     update: (id, changes, original) => commit(tasks => updateTask(tasks, id, changes, original)),
+    move: (id, parentId, expectedParentId) => commit(tasks => moveTask(tasks, id, parentId, expectedParentId)),
     remove: id => commit(tasks => removeTask(tasks, id)),
     clearCompleted: () => commit(tasks => tasksByStatus(tasks, false)),
     restore: data => commit(() => validate(data), true) };

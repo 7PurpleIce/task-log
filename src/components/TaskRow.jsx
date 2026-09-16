@@ -1,16 +1,22 @@
 import React from "react";
 import { getTaskStatus } from "../taskStatuses";
 
-export default function TaskRow({ task, depth, nested, deadline, selectedId, disabled, onUpdate, onSelect, onAdd }) {
+export default function TaskRow({ task, depth, nested, deadline, selectedId, disabled, onUpdate, onSelect, onAdd, movement }) {
   return (
           <div
+            {...movement.targetProps(task.id)}
             key={task.id}
-            className={`task-row ${deadline?.overdue ? "overdue" : ""} ${selectedId === task.id ? "selected" : ""}`}
+            className={`task-row ${movement.over === task.id ? "drop-target" : ""} ${movement.moving === task.id ? "drag-source" : ""} ${deadline?.overdue ? "overdue" : ""} ${selectedId === task.id ? "selected" : ""}`}
             style={{ marginLeft: depth * 24 }}
           >
+            <button type="button" className="icon drag-handle" disabled={disabled}
+              {...movement.handleProps(task)} title="Перетащить ветку или выбрать перенос"
+              aria-label={`Переместить ветку «${task.title}»`} aria-pressed={movement.moving === task.id}>⠿</button>
+            {movement.moving && movement.allowed(task.id) && <button type="button"
+              className="move-here" onClick={() => movement.drop(task.id)}>Поместить сюда</button>}
             <button
               className="icon"
-              disabled={disabled || !nested.length}
+              disabled={!nested.length}
               aria-label={task.collapsed ? "Развернуть ветку" : "Свернуть ветку"}
               aria-expanded={nested.length ? !task.collapsed : undefined}
               onClick={() => onUpdate(task.id, {

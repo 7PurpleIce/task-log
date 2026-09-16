@@ -1,3 +1,4 @@
+import useTaskExpansion from "./useTaskExpansion";
 import { DEFAULT_TASK_STATUS } from "./taskStatuses";
 import TaskComposer from "./components/TaskComposer";
 import { logError } from "./diagnostics";
@@ -29,7 +30,8 @@ export default function App() {
 function Workspace({ session, recovery, onRecovered }) {
   const local = useTasks();
   const cloud = useCloudTasks(session?.user.id);
-  const { tasks, error, blocked, add, update, remove, restore, clearCompleted } = session ? cloud : local;
+  const { tasks, error, blocked, add, update, move, remove, restore, clearCompleted } = session ? cloud : local;
+  const expansion = useTaskExpansion(tasks, session?.user.id || "local");
   const [selectedId, setSelectedId] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [newStatus, setNewStatus] = useState(DEFAULT_TASK_STATUS);
@@ -69,6 +71,7 @@ function Workspace({ session, recovery, onRecovered }) {
 
   function prepareAdd(id = null) {
     setParentId(id);
+    expansion.expand(id);
     titleInput.current?.focus();
   }
 
@@ -205,6 +208,11 @@ function Workspace({ session, recovery, onRecovered }) {
             newDueDate={newDueDate} setNewDueDate={setNewDueDate} blocked={blocked} />
 
           <TaskSections
+            onMove={async (id, parentId, expectedParentId) => {
+              const ok = await move(id, parentId, expectedParentId);
+              if (ok) expansion.expand(parentId);
+              return ok;
+            }}
             onClearCompleted={async () => {
               if (await clearCompleted()) {
                 if (selected?.done) setSelectedId(null);
@@ -213,10 +221,16 @@ function Workspace({ session, recovery, onRecovered }) {
               }
             }}
             disabled={blocked}
-            tasks={tasks}
+            tasks={expansion.tasks}
             selectedId={selectedId}
             onSelect={setSelectedId}
-            onUpdate={update}
+            onUpdate={(id, changes) => {
+              if (typeof changes.collapsed === "boolean") {
+                expansion.set(id, changes.collapsed);
+                return true;
+              }
+              return update(id, changes);
+            }}
             onAdd={prepareAdd}
           />
 

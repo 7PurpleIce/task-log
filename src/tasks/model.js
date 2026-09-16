@@ -144,3 +144,26 @@ export function removeTask(tasks, id) {
   const ids = branchIds(tasks, id);
   return tasks.filter(task => !ids.has(task.id));
 }
+
+export function canMoveTask(tasks, id, parentId) {
+  const source = tasks.find(task => task.id === id);
+  if (!source || source.parentId === parentId) return false;
+  if (parentId === null) return true;
+  const parent = tasks.find(task => task.id === parentId);
+  return Boolean(parent && parent.done === source.done && !branchIds(tasks, id).has(parentId));
+}
+
+export function moveTask(tasks, id, parentId, expectedParentId) {
+  const source = tasks.find(task => task.id === id);
+  if (!source) throw new Error("Перемещаемая задача уже удалена.");
+  if (source.parentId !== expectedParentId) throw new Error("Задача уже перемещена в другой вкладке. Повторите перенос.");
+  if (!canMoveTask(tasks, id, parentId)) {
+    throw new Error("Выберите другую задачу в том же разделе. Нельзя переносить ветку внутрь самой себя.");
+  }
+  const next = tasks.map(task => {
+    if (task.id === id) return { ...task, parentId };
+    if (task.id === parentId) return { ...task, collapsed: false };
+    return task;
+  });
+  return validate({ version: 1, tasks: next });
+}

@@ -1,8 +1,10 @@
+import useTaskMove from "../useTaskMove";
 import React, { useEffect, useState } from "react";
 import TaskTree from "./TaskTree";
 import { tasksByStatus } from "../tasks/model";
 
-export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) {
+export default function TaskSections({ tasks, onClearCompleted, onMove, ...treeProps }) {
+  const movement = useTaskMove(tasks, onMove, treeProps.disabled);
   const [sortOrder, setSortOrder] = useState("default");
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -15,6 +17,14 @@ export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) 
   const active = tasksByStatus(tasks, false);
   const completed = tasksByStatus(tasks, true);
   return <>
+    {movement.moving && <div className="move-toolbar" onKeyDown={event => { if (event.key === "Escape") movement.cancel(); }}>
+      <span>Перетащите ветку на задачу в том же разделе или нажмите «Поместить сюда».</span>
+      <button type="button" {...movement.targetProps(null)}
+        className={movement.over === null ? "drop-target" : ""}
+        disabled={!movement.allowed(null)} onClick={() => movement.drop(null)}>На верхний уровень</button>
+      <button type="button" onClick={movement.cancel}>Отменить перенос</button>
+    </div>}
+    {movement.message && <p className="hint" role="status">{movement.message}</p>}
     <label className="deadline-sort">Сортировка
       <select value={sortOrder} onChange={event => setSortOrder(event.target.value)}>
         <option value="default">Новые сверху</option>
@@ -24,7 +34,7 @@ export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) 
     </label>
     <section aria-labelledby="active-tasks-heading">
       <h2 id="active-tasks-heading">В работе <span className="count">({active.length})</span></h2>
-      <TaskTree {...treeProps} sortOrder={sortOrder} now={now} tasks={active}
+      <TaskTree {...treeProps} movement={movement} sortOrder={sortOrder} now={now} tasks={active}
         emptyTitle={tasks.length ? "Все задачи выполнены" : "Начните с главной задачи"}
         emptyDescription={tasks.length ? "Завершённые задачи находятся в разделе ниже." : "Затем добавляйте ветки и подзадачи кнопкой «＋»."} />
     </section>
@@ -45,7 +55,7 @@ export default function TaskSections({ tasks, onClearCompleted, ...treeProps }) 
           </svg>
         </button>
       </div>
-      <TaskTree {...treeProps} sortOrder={sortOrder} now={now} tasks={completed}
+      <TaskTree {...treeProps} movement={movement} sortOrder={sortOrder} now={now} tasks={completed}
         emptyTitle="Выполненных задач пока нет"
         emptyDescription="Отметьте задачу галочкой, и она появится здесь." />
     </section>

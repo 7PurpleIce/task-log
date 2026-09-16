@@ -4,7 +4,7 @@ import TaskRow from "./TaskRow";
 import React from "react";
 
 export default function TaskTree({
-  tasks, selectedId, onSelect, onUpdate, onAdd, disabled, sortOrder = "default", now = new Date(),
+  tasks, selectedId, onSelect, onUpdate, onAdd, disabled, movement, sortOrder = "default", now = new Date(),
   emptyTitle = "Начните с главной задачи",
   emptyDescription = "Затем добавляйте ветки и подзадачи кнопкой «＋»."
 }) {
@@ -54,7 +54,7 @@ export default function TaskTree({
         const nested = children.get(task.id) || [];
 
         const deadline = deadlineInfo(task, now);
-        return <TaskRow key={task.id} task={task} depth={depth} nested={nested} deadline={deadline}
+        return <TaskRow movement={movement} key={task.id} task={task} depth={depth} nested={nested} deadline={deadline}
           selectedId={selectedId} disabled={disabled} onUpdate={onUpdate} onSelect={onSelect} onAdd={onAdd} />;
       })}
     </div>

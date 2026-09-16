@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTask, updateTask, removeTask, validate, tasksByStatus, taskFields } from '../src/tasks/model.js';
+import { createTask, updateTask, removeTask, moveTask, validate, tasksByStatus, taskFields } from '../src/tasks/model.js';
 import { readLocalTasks, writeLocalTasks } from '../src/tasks/localRepository.js';
 import { readCloudUpdate } from '../src/tasks/cloudRepository.js';
 import { initialDraft, editDraft, isDirty } from '../src/tasks/drafts.js';
@@ -117,4 +117,33 @@ test('reopening a subtask changes only its descendants, not its parent or siblin
   const reopened = updateTask(original, 'child', { done: false });
   assert.deepEqual(reopened.map(t => t.done), [true, false, false, true]);
   assert.deepEqual(updateTask(original, 'child', { notes: 'changed' }).map(t => t.done), [true, true, true, true]);
+});
+
+test('move retains every descendant, fields and source immutability', () => {
+  const original = [task('old'), {...task('child', 'old'), notes: 'notes', pinned: true, dueDate: '2026-10-01'},
+    task('deep', 'child'), {...task('new'), collapsed: true}];
+  const moved = moveTask(original, 'old', 'new', null);
+  assert.equal(moved[0].parentId, 'new');
+  assert.deepEqual(moved[1], original[1]);
+  assert.deepEqual(moved[2], original[2]);
+  assert.equal(moved[3].collapsed, false);
+  assert.equal(original[0].parentId, null);
+  assert.deepEqual(moveTask(moved, 'old', null, 'new').slice(0,3), original.slice(0,3));
+});
+test('move rejects cycles, missing parents, stale moves and cross-section moves', () => {
+  const tasks = [task('a'), task('b','a'), task('c','b'), {...task('done'),done:true}];
+  for (const parent of ['a','b','c','missing','done']) assert.throws(() => moveTask(tasks,'a',parent,null));
+  assert.throws(() => moveTask(tasks,'b',null,'wrong-parent'));
+  assert.throws(() => moveTask(tasks,'missing',null,null));
+});
+test('local transfer persists the branch without removing concurrent additions', async () => {
+  const store = storage([task('a'),task('b','a'),task('target')]); const lock = locks();
+  await Promise.all([
+    writeLocalTasks(store,lock,tasks=>createTask(tasks,{title:'extra'},'extra','2026-09-15')),
+    writeLocalTasks(store,lock,tasks=>moveTask(tasks,'a','target',null))
+  ]);
+  const saved = readLocalTasks(store).tasks;
+  assert.equal(saved.length,4);
+  assert.equal(saved.find(t=>t.id==='a').parentId,'target');
+  assert.equal(saved.find(t=>t.id==='b').parentId,'a');
 });

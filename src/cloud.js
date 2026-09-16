@@ -118,6 +118,9 @@ export async function signOut() {
 }
 
 async function accessToken(owner) {
+  const cached = getSession();
+  if (cached?.user.id !== owner) throw new Error("Аккаунт изменился. Повторите действие.");
+  if (cached.expires_at > Date.now() / 1000 + 60) return cached.access_token;
   async function refresh() {
     const session = getSession();
     if (session?.user.id !== owner) throw new Error("Аккаунт изменился. Повторите действие.");
@@ -139,8 +142,13 @@ async function accessToken(owner) {
   }
   if (!refreshing) {
     refreshing = (navigator.locks
-      ? navigator.locks.request("task-log-refresh", refresh)
-      : refresh()).finally(() => { refreshing = null; });
+      ? navigator.locks.request("task-log-refresh", { signal: AbortSignal.timeout(10000) }, refresh)
+      : refresh()).catch(error => {
+        if (error.name === "TimeoutError" || error.name === "AbortError") {
+          throw new Error("Другая вкладка задерживает обновление сеанса. Закройте её и повторите сохранение.");
+        }
+        throw error;
+      }).finally(() => { refreshing = null; });
   }
   const token = await refreshing;
   if (getSession()?.user.id !== owner) throw new Error("Аккаунт изменился.");

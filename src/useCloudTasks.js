@@ -2,7 +2,7 @@ import { readCloudUpdate } from "./tasks/cloudRepository";
 import { DEFAULT_TASK_STATUS } from "./taskStatuses";
 import { logEvent, logError } from "./diagnostics";
 import { useEffect, useRef, useState } from "react";
-import { createTask, updateTask, removeTask, validate, tasksByStatus } from "./tasks/model";
+import { createTask, updateTask, removeTask, moveTask, validate, tasksByStatus } from "./tasks/model";
 import { cloudRequest } from "./cloud";
 
 export default function useCloudTasks(owner) {
@@ -132,6 +132,6 @@ export default function useCloudTasks(owner) {
   }
 
   return { tasks: doc.tasks, error, blocked: !ready || busy, busy, ready,
-    status, add, update, remove, restore, clearCompleted, refresh: pull };
+    status, add, update, move: (id, parentId, expectedParentId) => mutate(tasks => moveTask(tasks, id, parentId, expectedParentId)), remove, restore, clearCompleted, refresh: pull };
 }
 
