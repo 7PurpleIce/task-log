@@ -17,13 +17,13 @@ export default function TaskSections({ tasks, onClearCompleted, onMove, ...treeP
   const active = tasksByStatus(tasks, false);
   const completed = tasksByStatus(tasks, true);
   return <>
-    <div className="move-toolbar" onKeyDown={event => { if (event.key === "Escape") movement.cancel(); }}>
-      <span>{movement.moving ? "Отпустите ветку над подсвеченной задачей, чтобы вложить её." : "Тяните за название или ⠿, чтобы переместить ветку в другую задачу."}</span>
+    {movement.moving && <div className="move-toolbar" onKeyDown={event => { if (event.key === "Escape") movement.cancel(); }}>
+      <span>Отпустите ветку над подсвеченной задачей, чтобы вложить её.</span>
       <button type="button" {...movement.targetProps(null)}
         className={movement.over === null ? "drop-target" : ""}
         disabled={!movement.allowed(null)} onClick={() => movement.drop(null)}>На верхний уровень</button>
       <button type="button" disabled={!movement.moving} onClick={movement.cancel}>Отменить перенос</button>
-    </div>
+    </div>}
     {movement.preview && <div className="task-drag-preview" role="status"
       style={{ left: Math.min(movement.preview.x + 16, window.innerWidth - 250),
         top: Math.min(movement.preview.y + 16, window.innerHeight - 90) }}>

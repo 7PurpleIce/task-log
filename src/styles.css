@@ -391,7 +391,7 @@ header > .backup-actions > button {
 .drag-handle:active { cursor: grabbing; }
 .task-row.drag-source { opacity: .55; }
 .task-row.drop-target, .task-row.overdue.drop-target { outline: 2px solid var(--orange); outline-offset: -2px; background: #34291e; }
-.move-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; padding: 12px; border: 1px dashed var(--orange); }
+.move-toolbar { position: fixed; z-index: 900; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(620px, calc(100vw - 32px)); box-sizing: border-box; background: #191d20; box-shadow: 0 8px 30px #000a; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; padding: 12px; border: 1px dashed var(--orange); }
 .move-toolbar span { flex-basis: 100%; color: var(--muted); font-size: 13px; }
 .move-toolbar .drop-target { outline: 2px solid var(--orange); }
 .move-here { padding: 4px 6px; font-size: 12px; flex-shrink: 0; }
