@@ -114,7 +114,7 @@ export default function TaskEditor({
       )}
 
       <p className="hint">
-        Отметка «Выполнено» завершает задачу и все её подзадачи. Снятие галочки открывает только выбранную задачу.
+        Отметка «Выполнено» завершает задачу и все её подзадачи. Снятие галочки возвращает в работу задачу и все её подзадачи.
       </p>
 
       <button className="wide" disabled={disabled || pending} onClick={() => onAdd(task.id)}>

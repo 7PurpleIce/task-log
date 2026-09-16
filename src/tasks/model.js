@@ -16,14 +16,16 @@ export function branchIds(tasks, rootId) {
 }
 
 export function applyTaskChanges(tasks, id, changes) {
-  const completedBranch = changes.done === true ? branchIds(tasks, id) : null;
+  const changedBranch = typeof changes.done === "boolean" ? branchIds(tasks, id) : null;
   return tasks.map(task => {
     if (task.id === id) {
       const next = { ...task, ...changes };
       if (next.done) next.pinned = false;
       return next;
     }
-    if (completedBranch?.has(task.id)) return { ...task, done: true, pinned: false };
+    if (changedBranch?.has(task.id)) {
+      return { ...task, done: changes.done, ...(changes.done ? { pinned: false } : {}) };
+    }
     return task;
   });
 }

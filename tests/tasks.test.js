@@ -94,3 +94,27 @@ test('deadline is overdue only after its day ends, and never for completed tasks
   assert.equal(deadlineInfo(t, new Date(2026, 8, 16)).overdue, true);
   assert.equal(deadlineInfo({ ...t, done: true }, new Date(2026, 8, 16)).overdue, false);
 });
+
+test('reopening a parent restores the whole branch and leaves other branches untouched', () => {
+  const original = [
+    { ...task('root'), done: true, pinned: false },
+    { ...task('child', 'root'), done: true, pinned: false },
+    { ...task('grandchild', 'child'), done: true, pinned: false },
+    { ...task('sibling', 'root'), done: true, pinned: false },
+    { ...task('other'), done: true }
+  ];
+  const reopened = updateTask(original, 'root', { done: false });
+  assert.ok(reopened.filter(t => t.id !== 'other').every(t => !t.done && !t.pinned));
+  assert.equal(reopened.find(t => t.id === 'other').done, true);
+  assert.deepEqual(tasksByStatus(reopened, false).map(t => [t.id, t.parentId]),
+    [['root', null], ['child', 'root'], ['grandchild', 'child'], ['sibling', 'root']]);
+  assert.ok(original.every(t => t.done));
+});
+
+test('reopening a subtask changes only its descendants, not its parent or sibling', () => {
+  const original = ['root', 'child', 'grandchild', 'sibling'].map((id, i) =>
+    ({ ...task(id, [null, 'root', 'child', 'root'][i]), done: true }));
+  const reopened = updateTask(original, 'child', { done: false });
+  assert.deepEqual(reopened.map(t => t.done), [true, false, false, true]);
+  assert.deepEqual(updateTask(original, 'child', { notes: 'changed' }).map(t => t.done), [true, true, true, true]);
+});
