@@ -71,7 +71,7 @@ export default function useCloudTasks(owner) {
     };
   }, [owner]);
 
-  async function commit(next, expectedRevision = doc.revision) {
+  async function commit(next, expectedRevision = current.current.revision) {
     if (!ready || writing.current || !active.current) return false;
     writing.current = true;
     epoch.current++;
@@ -90,11 +90,28 @@ export default function useCloudTasks(owner) {
       return true;
     } catch (err) {
       if (active.current) {
-        logError(err.code === "40001" ? "conflict" : "save_failed", err, { revision: expectedRevision });
-        setError(err.code === "40001"
-          ? "На другом устройстве появились изменения. Данные обновятся автоматически. Проверьте их и повторите действие; текст в редакторе сохранён."
+        const conflict = err.code === "PT409" || err.code === "40001";
+        logError(conflict ? "conflict" : "save_failed", err, { revision: expectedRevision });
+        setError(conflict
+          ? "Версия задач изменилась в другой вкладке или на другом устройстве. Проверьте актуальные данные и повторите действие; текст в редакторе сохранён."
           : err.message + " Изменение не подтверждено. Проверьте данные перед повторной отправкой.");
         setStatus("Не удалось подтвердить сохранение");
+        if (conflict) {
+          // Fetch the current document once; never retry a stale write automatically.
+          try {
+            const latest = await readCloudUpdate(cloudRequest, owner, current.current, false,
+              () => active.current);
+            if (active.current && latest) {
+              accept(latest);
+              setStatus("Актуальные задачи загружены. Проверьте изменения перед сохранением.");
+            }
+          } catch (refreshError) {
+            if (active.current) {
+              logError("conflict_refresh_failed", refreshError);
+              setStatus("Не удалось загрузить актуальные задачи. Нажмите «Проверить сейчас».");
+            }
+          }
+        }
       }
       return false;
     } finally {
@@ -104,7 +121,7 @@ export default function useCloudTasks(owner) {
   }
 
   async function mutate(transform) {
-    try { return await commit(transform(doc.tasks)); }
+    try { return await commit(transform(current.current.tasks)); }
     catch (err) { logError("save_failed", err); setError(err.message); return false; }
   }
 
