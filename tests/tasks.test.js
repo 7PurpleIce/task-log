@@ -174,3 +174,37 @@ test('unsafe or malformed links cannot enter stored task documents', () => {
     assert.equal(validate({ version: 1, tasks: [{ ...task('a'), link }] }).length, 1);
   }
 });
+
+test('hours accept decimal comma or point and reject invalid values', async () => {
+  const { parseHours } = await import('../src/taskEffort.js');
+  for (const [value, expected] of [['', null], [null, null], ['0', 0], ['2', 2], ['1,5', 1.5], ['1.25', 1.25]]) {
+    assert.equal(parseHours(value), expected);
+  }
+  for (const value of ['-1', 'abc', '1,2,3', 'Infinity', '1e6']) assert.throws(() => parseHours(value));
+  for (const hoursSpent of [-1, Infinity, '2', NaN]) {
+    assert.throws(() => validate({ version: 1, tasks: [{ ...task('a'), hoursSpent }] }));
+  }
+});
+
+test('hours persist, round-trip through backups and clear without affecting other fields', async () => {
+  const store = storage([task('a')]); const lock = locks();
+  assert.equal(taskFields(readLocalTasks(store).tasks[0]).hoursSpent, null);
+  await writeLocalTasks(store, lock, tasks => updateTask(tasks, 'a', { hoursSpent: 1.5, link: 'https://example.com/task' }));
+  const restored = validate(JSON.parse(JSON.stringify({ version: 1, tasks: readLocalTasks(store).tasks })));
+  assert.equal(restored[0].hoursSpent, 1.5);
+  await writeLocalTasks(store, lock, tasks => updateTask(tasks, 'a', { hoursSpent: 0 }));
+  assert.equal(taskFields(readLocalTasks(store).tasks[0]).hoursSpent, 0);
+  await writeLocalTasks(store, lock, tasks => updateTask(tasks, 'a', { hoursSpent: null }));
+  assert.equal(readLocalTasks(store).tasks[0].hoursSpent, null);
+  assert.equal(readLocalTasks(store).tasks[0].link, 'https://example.com/task');
+});
+
+test('hours-only drafts detect concurrent edits and branch operations retain hours', () => {
+  const original = { ...task('a'), hoursSpent: 2 };
+  const draft = editDraft(initialDraft(original), { hoursSpent: '3,5' });
+  assert.equal(isDirty(draft), true);
+  assert.throws(() => updateTask([{ ...original, hoursSpent: 4 }], 'a', { hoursSpent: 3.5 }, draft.baseline), /изменена/);
+  const moved = moveTask([original, task('b')], 'a', 'b', null);
+  assert.equal(moved.find(t => t.id === 'a').hoursSpent, 2);
+  assert.equal(updateTask(moved, 'a', { done: true }).find(t => t.id === 'a').hoursSpent, 2);
+});

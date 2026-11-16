@@ -1,3 +1,5 @@
+import TaskEffortInput from "./TaskEffortInput";
+import { parseHours } from "../taskEffort";
 import TaskLinkInput from "./TaskLinkInput";
 import { validTaskLink } from "../taskLink";
 import useTaskDraft from "../useTaskDraft";
@@ -10,9 +12,12 @@ export default function TaskEditor({
   task, tasks, onUpdate, onAdd, onDelete, disabled, drafts
 }) {
   const { values, baseline, dirty, change, reset } = useTaskDraft(task, drafts);
-  const { title, notes, status, dueDate, link } = values;
+  const { title, notes, status, dueDate, link, hoursSpent } = values;
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
+  let parsedHours = null;
+  let hoursError = "";
+  try { parsedHours = parseHours(hoursSpent); } catch (error) { hoursError = error.message; }
   const remoteChanged = !sameFields(baseline, task);
   const branch = branchIds(tasks, task.id);
 
@@ -23,13 +28,13 @@ export default function TaskEditor({
 
   async function submit(event) {
     event.preventDefault();
-    if (!title.trim() || !validTaskLink(link.trim()) || pending || disabled) return;
+    if (!title.trim() || hoursError || !validTaskLink(link.trim()) || pending || disabled) return;
     setPending(true);
     try {
-      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null, link: link.trim() }, baseline);
+      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null, link: link.trim(), hoursSpent: parsedHours }, baseline);
       setSaved(Boolean(ok));
       if (ok) {
-        reset({ title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null, link: link.trim() });
+        reset({ title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null, link: link.trim(), hoursSpent: parsedHours });
       }
     } finally { setPending(false); }
   }
@@ -79,6 +84,9 @@ export default function TaskEditor({
           onClick={() => { change({ dueDate: null }); setSaved(false); }}>Убрать срок</button>}
         <p className="hint">До конца выбранного дня по времени вашего устройства.</p>
 
+        <TaskEffortInput value={hoursSpent} error={hoursError} disabled={pending}
+          onChange={value => { change({ hoursSpent: value }); setSaved(false); }} />
+
         <TaskLinkInput value={link} savedValue={task.link} disabled={pending}
           onChange={value => { change({ link: value }); setSaved(false); }} />
 
@@ -95,7 +103,7 @@ export default function TaskEditor({
           }}
         />
 
-        <button className="primary" type="submit" disabled={disabled || pending || !validTaskLink(link.trim())}>
+        <button className="primary" type="submit" disabled={disabled || pending || Boolean(hoursError) || !validTaskLink(link.trim())}>
           Сохранить изменения
         </button>
         <span className="save-note" role="status">
