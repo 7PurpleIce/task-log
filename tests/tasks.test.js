@@ -147,3 +147,30 @@ test('local transfer persists the branch without removing concurrent additions',
   assert.equal(saved.find(t=>t.id==='a').parentId,'target');
   assert.equal(saved.find(t=>t.id==='b').parentId,'a');
 });
+
+test('optional task links survive storage, export/import and can be cleared', async () => {
+  const store = storage([task('a')]); const lock = locks();
+  assert.equal(taskFields(readLocalTasks(store).tasks[0]).link, '');
+  await writeLocalTasks(store, lock, tasks => updateTask(tasks, 'a', { link: 'https://example.com/issues/42?view=full#notes' }));
+  const restored = validate(JSON.parse(JSON.stringify({ version: 1, tasks: readLocalTasks(store).tasks })));
+  assert.equal(restored[0].link, 'https://example.com/issues/42?view=full#notes');
+  await writeLocalTasks(store, lock, tasks => updateTask(tasks, 'a', { link: '' }));
+  assert.equal(readLocalTasks(store).tasks[0].link, '');
+});
+
+test('link-only edits preserve drafts and detect concurrent changes', () => {
+  const original = task('a');
+  const draft = editDraft(initialDraft(original), { link: 'https://example.com/a' });
+  assert.equal(isDirty(draft), true);
+  assert.equal(draft.baseline.link, '');
+  assert.throws(() => updateTask([{ ...original, link: 'https://example.com/b' }], 'a', draft.values, draft.baseline), /изменена/);
+});
+
+test('unsafe or malformed links cannot enter stored task documents', () => {
+  for (const link of ['javascript:alert(1)', 'data:text/html,test', '//example.com', 'file:///test', 'https://user:password@example.com', 'not a URL', 123]) {
+    assert.throws(() => validate({ version: 1, tasks: [{ ...task('a'), link }] }), /некорректные/);
+  }
+  for (const link of [undefined, null, '', 'http://localhost:8080/task/1', 'https://example.com']) {
+    assert.equal(validate({ version: 1, tasks: [{ ...task('a'), link }] }).length, 1);
+  }
+});

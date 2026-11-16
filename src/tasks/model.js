@@ -1,3 +1,4 @@
+import { validTaskLink } from "../taskLink.js";
 import { validDueDate } from "../deadlines.js";
 import { MAX_TASK_STATUS_LENGTH, DEFAULT_TASK_STATUS, normalizeTaskStatus, getTaskStatus } from "../taskStatuses.js";
 
@@ -81,6 +82,7 @@ export function validate(data) {
       typeof task.notes !== "string" ||
       typeof task.done !== "boolean" ||
       !validDueDate(task.dueDate) ||
+      !validTaskLink(task.link) ||
       (task.pinned !== undefined && typeof task.pinned !== "boolean") ||
       (task.status !== undefined && (typeof task.status !== "string" || !task.status.trim() || task.status.length > MAX_TASK_STATUS_LENGTH)) ||
       typeof task.collapsed !== "boolean" ||
@@ -113,12 +115,12 @@ export function validate(data) {
 
 
 export function taskFields(task) {
-  return { title: task.title, notes: task.notes, status: getTaskStatus(task), dueDate: task.dueDate || null };
+  return { title: task.title, notes: task.notes, status: getTaskStatus(task), dueDate: task.dueDate || null, link: task.link || "" };
 }
 
 export function sameFields(a, b) {
   return a.title === b.title && a.notes === b.notes && getTaskStatus(a) === getTaskStatus(b) &&
-    (a.dueDate || null) === (b.dueDate || null);
+    (a.dueDate || null) === (b.dueDate || null) && (a.link || "") === (b.link || "");
 }
 
 export function createTask(tasks, { title, parentId = null, status = DEFAULT_TASK_STATUS, dueDate = null }, id, createdAt) {

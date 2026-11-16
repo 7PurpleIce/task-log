@@ -9,7 +9,7 @@ export default function useTaskDraft(task, drafts) {
       setDraft(initialDraft(task));
       drafts.current.delete(task.id);
     }
-  }, [task.id, task.title, task.notes, task.status, task.dueDate, dirty, drafts]);
+  }, [task.id, task.title, task.notes, task.status, task.dueDate, task.link, dirty, drafts]);
 
   function change(changes) {
     const next = editDraft(draft, changes);

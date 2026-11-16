@@ -1,3 +1,5 @@
+import TaskLinkInput from "./TaskLinkInput";
+import { validTaskLink } from "../taskLink";
 import useTaskDraft from "../useTaskDraft";
 import { branchIds, taskFields, sameFields } from "../tasks/model";
 import { normalizeTaskStatus } from "../taskStatuses";
@@ -8,7 +10,7 @@ export default function TaskEditor({
   task, tasks, onUpdate, onAdd, onDelete, disabled, drafts
 }) {
   const { values, baseline, dirty, change, reset } = useTaskDraft(task, drafts);
-  const { title, notes, status, dueDate } = values;
+  const { title, notes, status, dueDate, link } = values;
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
   const remoteChanged = !sameFields(baseline, task);
@@ -21,13 +23,13 @@ export default function TaskEditor({
 
   async function submit(event) {
     event.preventDefault();
-    if (!title.trim() || pending || disabled) return;
+    if (!title.trim() || !validTaskLink(link.trim()) || pending || disabled) return;
     setPending(true);
     try {
-      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null }, baseline);
+      const ok = await onUpdate(task.id, { title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null, link: link.trim() }, baseline);
       setSaved(Boolean(ok));
       if (ok) {
-        reset({ title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null });
+        reset({ title: title.trim(), notes, status: normalizeTaskStatus(status), dueDate: dueDate || null, link: link.trim() });
       }
     } finally { setPending(false); }
   }
@@ -77,6 +79,9 @@ export default function TaskEditor({
           onClick={() => { change({ dueDate: null }); setSaved(false); }}>Убрать срок</button>}
         <p className="hint">До конца выбранного дня по времени вашего устройства.</p>
 
+        <TaskLinkInput value={link} savedValue={task.link} disabled={pending}
+          onChange={value => { change({ link: value }); setSaved(false); }} />
+
         <label htmlFor="task-notes">Заметки</label>
         <textarea
           id="task-notes"
@@ -90,7 +95,7 @@ export default function TaskEditor({
           }}
         />
 
-        <button className="primary" type="submit" disabled={disabled || pending}>
+        <button className="primary" type="submit" disabled={disabled || pending || !validTaskLink(link.trim())}>
           Сохранить изменения
         </button>
         <span className="save-note" role="status">
